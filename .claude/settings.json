@@ -1,14 +1,6 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
-  "statusLine": {
-    "type": "command",
-    "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/statusline.sh\""
-  },
-  "worktree": {
-    "baseRef": "head"
-  },
   "permissions": {
-    "defaultMode": "default",
     "allow": [
       "Bash(dir *)",
       "Bash(python -m pytest *)",
@@ -145,7 +137,8 @@
       "PowerShell(git *clean* -Xqdf*)",
       "PowerShell(Get-Content *.env*)",
       "PowerShell(*>.env*)"
-    ]
+    ],
+    "defaultMode": "default"
   },
   "hooks": {
     "SessionStart": [
@@ -290,5 +283,17 @@
         ]
       }
     ]
+  },
+  "worktree": {
+    "baseRef": "head"
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/statusline.sh\""
+  },
+  "enabledPlugins": {
+    "caveman@anthropic-plugin-directory": true,
+    "ponytail@ponytail": true,
+    "claude-memory@anthropic-plugin-directory": true
   }
 }

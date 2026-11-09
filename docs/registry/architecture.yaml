@@ -40,7 +40,7 @@
 #   unsupported layout, with its number.
 
 version: 1
-last_updated: ""
+last_updated: "2026-11-01"
 
 # ─── STATE OWNERSHIP ─────────────────────────────────────────────────────────
 # Who is the authoritative owner of each piece of shared game state.
@@ -53,7 +53,18 @@ last_updated: ""
 # interface: how other systems access this state (read-only property, method call,
 #   signal, shared resource, etc.) — this is the contract other ADRs depend on.
 
-state_ownership: []
+state_ownership:
+  - state: sim_state_buffer
+    status: active
+    owner_system: sim-core
+    adr: docs/architecture/adr-0001-sim-numeric-model.md
+    interface: "One PackedInt64Array holding all sim state (positions, counters, input-history ring, hit-event buffer, projectile pools, PRNG state); snapshot / restore / checksum are sim-core operations; other systems add int fields and read or write only their own slots through the phase pipeline; presentation reads only"
+    write_access: sim-phase-pipeline-only
+    referenced_by:
+      - docs/architecture/adr-0001-sim-numeric-model.md
+      - docs/architecture/adr-0002-sim-view-split.md   # presentation reads via SimView; never holds the array
+    added: 2026-11-01
+    revised: ""
 
 # Example:
 #
@@ -81,7 +92,36 @@ state_ownership: []
 #
 # pattern options: signal | direct_call | event_bus | shared_resource | rpc | none
 
-interfaces: []
+interfaces:
+  - contract: sim_to_presentation
+    status: active
+    pattern: direct_call
+    producer: sim-core
+    consumers:
+      - presentation-and-feel
+      - hud
+      - audio
+    adr: docs/architecture/adr-0002-sim-view-split.md
+    signal_signature: "SimView read-only accessors returning ints (pos_x_su, prev_pos_x_su, facing, anim_id, anim_tick, freeze_ticks, ...); MatchRunner calls update_view(view, alpha) on each component in a fixed order"
+    referenced_by:
+      - docs/architecture/adr-0002-sim-view-split.md
+    added: 2026-11-01
+    revised: ""
+
+  - contract: sim_presentation_events
+    status: active
+    pattern: shared_resource
+    producer: sim-core
+    consumers:
+      - presentation-and-feel
+      - hud
+      - audio
+    adr: docs/architecture/adr-0002-sim-view-split.md
+    signal_signature: "Event ring inside the sim buffer, records (tick, seq, type, args); consumers dispatch only events newer than last_presented (tick, seq); delay-based rule, the rollback ADR must replace it with reconciliation"
+    referenced_by:
+      - docs/architecture/adr-0002-sim-view-split.md
+    added: 2026-11-01
+    revised: ""
 
 # Example:
 #
@@ -110,7 +150,16 @@ interfaces: []
 # Register a budget when an ADR explicitly claims a frame time allocation.
 # The registry lets /architecture-review verify the total doesn't exceed the target.
 
-performance_budgets: []
+performance_budgets:
+  - system: sim-core
+    status: active
+    budget_ms: 0.25
+    adr: docs/architecture/adr-0001-sim-numeric-model.md
+    notes: "Per sim tick, including snapshot and checksum; leaves room for ~8 re-simulated ticks inside the 2.0 ms sim slice (art bible 8.10, estimate) when rollback arrives"
+    referenced_by:
+      - docs/architecture/adr-0001-sim-numeric-model.md
+    added: 2026-11-01
+    revised: ""
 
 # Example:
 #
@@ -141,7 +190,61 @@ performance_budgets: []
 # Register an API decision when the choice is non-obvious and other ADRs might
 # make a different choice for the same purpose without knowing this was decided.
 
-api_decisions: []
+api_decisions:
+  - purpose: sim_state_storage
+    status: active
+    api: PackedInt64Array
+    not: PackedInt32Array
+    adr: docs/architecture/adr-0001-sim-numeric-model.md
+    reason: "PackedInt32Array truncates silently on assignment (5000000000 becomes 705032704, tested on 4.7.2)"
+    referenced_by:
+      - docs/architecture/adr-0001-sim-numeric-model.md
+    added: 2026-11-01
+    revised: ""
+
+  - purpose: sim_rng
+    status: active
+    api: SimRng (project-owned integer PRNG, state in the sim buffer)
+    not: RandomNumberGenerator, randi, randf, randomize
+    adr: docs/architecture/adr-0001-sim-numeric-model.md
+    reason: "Engine RNG cross-version stability is unverified; replays and LAN need a sequence the project controls"
+    referenced_by:
+      - docs/architecture/adr-0001-sim-numeric-model.md
+    added: 2026-11-01
+    revised: ""
+
+  - purpose: sim_checksum
+    status: active
+    api: SimHash.hash_words (word-wise, one XOR + wrapping multiply per int64)
+    not: hash(), Object.get_instance_id()
+    adr: docs/architecture/adr-0001-sim-numeric-model.md
+    reason: "hash() is 32-bit with unverified cross-version stability; fallback is HashingContext over buffer.to_byte_array()"
+    referenced_by:
+      - docs/architecture/adr-0001-sim-numeric-model.md
+    added: 2026-11-01
+    revised: ""
+
+  - purpose: sim_tick_driver
+    status: active
+    api: MatchRunner._process with an integer-microsecond accumulator, injected clock (default Time.get_ticks_usec), MAX_CATCHUP_TICKS cap and integer ticks_dropped
+    not: _physics_process / physics_ticks_per_second, one tick per rendered frame
+    adr: docs/architecture/adr-0002-sim-view-split.md
+    reason: "LAN stalls, replay fast-forward and rollback need the step count under the game's control; exact 60 ticks per second with no drift on any monitor"
+    referenced_by:
+      - docs/architecture/adr-0002-sim-view-split.md
+    added: 2026-11-01
+    revised: ""
+
+  - purpose: character_animation_drive
+    status: active
+    api: AnimationMixer.callback_mode_process = ANIMATION_CALLBACK_MODE_PROCESS_MANUAL, active = true, seek(anim_tick / 60.0, true)
+    not: play() auto-advance, active = false, seek(t, false)
+    adr: docs/architecture/adr-0002-sim-view-split.md
+    reason: "Poses must be the exact keyed pose of the current sim tick (tested 121/121 ticks on 4.7.2); active = false and seek(t, false) leave the pose stale"
+    referenced_by:
+      - docs/architecture/adr-0002-sim-view-split.md
+    added: 2026-11-01
+    revised: ""
 
 # Example:
 #
@@ -167,7 +270,55 @@ api_decisions: []
 # Register a pattern when an ADR explicitly bans it AND other ADRs might
 # unknowingly use it (i.e., it's a tempting but wrong approach for this project).
 
-forbidden_patterns: []
+forbidden_patterns:
+  - pattern: float_in_sim
+    status: active
+    description: "Sim state and sim computations must not use float, Vector2, Vector3, Transform2D/3D, Basis, Quaternion or Color, nor float-returning built-ins (sin, cos, sqrt, lerp, untyped abs/clamp/min/max). Floats are presentation-only, converted one-way from sim ints."
+    why: "Cross-machine float bit-identity depends on toolchain details the project cannot test; Vector2/3 use 32-bit real_t. One divergent bit desyncs LAN and breaks replay checksums."
+    adr: docs/architecture/adr-0001-sim-numeric-model.md
+    added: 2026-11-01
+
+  - pattern: raw_signed_division_in_sim
+    status: active
+    description: "Sim code must not use raw / or % where an operand can be negative; use SimMath.div_floor / mod_floor / mul_permille."
+    why: "GDScript / truncates toward zero and % takes the dividend's sign (tested on 4.7.2); one tested rounding helper keeps every system on the same convention."
+    adr: docs/architecture/adr-0001-sim-numeric-model.md
+    added: 2026-11-01
+
+  - pattern: signed_worldspace_ratio
+    status: active
+    description: "Facing-dependent quantities (knockback, displacement, velocity scaling, box offsets) must not be divided or scaled as signed world-space values; compute a non-negative facing-local magnitude and apply the facing sign last."
+    why: "Floor division is not mirror-symmetric (div_floor(-5, 2) = -3 but -div_floor(5, 2) = -2), so left- and right-facing characters would get different results."
+    adr: docs/architecture/adr-0001-sim-numeric-model.md
+    added: 2026-11-01
+
+  - pattern: engine_time_in_sim
+    status: active
+    description: "Sim code must not read delta, Time.*, OS.get_ticks_* or Engine.time_scale; the sim advances by its own integer tick counter."
+    why: "Wall-clock time differs between machines and runs; the sim must be a pure function of inputs and tick count."
+    adr: docs/architecture/adr-0001-sim-numeric-model.md
+    added: 2026-11-01
+
+  - pattern: engine_time_scale_in_match
+    status: active
+    description: "Engine.time_scale must never be changed while a match is running; presentation slow-mo is a presentation-only time scale on world-layer effects."
+    why: "time_scale scales delta for every node, invites drift between presentation and the sim, and would slow the HUD, which must run on unscaled time."
+    adr: docs/architecture/adr-0002-sim-view-split.md
+    added: 2026-11-01
+
+  - pattern: presentation_holds_sim_buffer
+    status: active
+    description: "Presentation code must not obtain, store or pass on the sim's PackedInt64Array; it reads only through SimView accessors."
+    why: "PackedInt64Array is a reference type in GDScript (tested on 4.7.2): a held reference is the live sim buffer, and one write through it desyncs a single machine with no error."
+    adr: docs/architecture/adr-0002-sim-view-split.md
+    added: 2026-11-01
+
+  - pattern: presentation_state_inference
+    status: active
+    description: "VFX, SFX and HUD cues must not be triggered by inferring events from state changes (e.g. HP went down, so play a hit); they fire only from the sim's tick-stamped event ring."
+    why: "Inference double-fires or misses under multi-tick catch-up and future re-simulation; events are fired once by (tick, seq)."
+    adr: docs/architecture/adr-0002-sim-view-split.md
+    added: 2026-11-01
 
 # Example:
 #

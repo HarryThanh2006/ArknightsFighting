@@ -54,7 +54,7 @@
 #   in any other shape is reported as unsupported layout, with its number.
 
 version: 1
-last_updated: ""
+last_updated: "2026-11-09"
 
 # ─── ENTITIES ────────────────────────────────────────────────────────────────
 # Named game-world objects: enemies, NPCs, characters, factions, bosses.
@@ -123,7 +123,84 @@ items: []
 #   output_range[min, max], added
 # Optional: expression (the actual formula), notes
 
-formulas: []
+formulas:
+  - name: freeze_set
+    status: active
+    source: design/gdd/sim-core.md
+    referenced_by:
+      - design/gdd/sim-core.md
+    variables:
+      - freeze_ticks
+      - N
+      - FREEZE_TICKS_MAX
+    output_range: [0, 150]
+    expression: "freeze_ticks' = maxi(freeze_ticks, clampi(N, 0, FREEZE_TICKS_MAX))"
+    notes: "F1. Applied by SP, Skills & Ultimate in block B; frozen ticks are T+1..T+N. Clamp in every build, Debug assert on clamp."
+    added: 2026-11-09
+    revised: ""
+
+  - name: event_ring_capacity
+    status: active
+    source: design/gdd/sim-core.md
+    referenced_by:
+      - design/gdd/sim-core.md
+      - docs/architecture/adr-0002-sim-view-split.md
+    variables:
+      - MAX_EVENTS_PER_TICK
+      - CATCHUP_RESERVE
+      - ROLLBACK_WINDOW_TICKS
+    output_range: [208, 208]
+    expression: "EVENT_RING_ENTRIES = MAX_EVENTS_PER_TICK * (CATCHUP_RESERVE + ROLLBACK_WINDOW_TICKS + 1)"
+    notes: "F4. 16 * (4 + 8 + 1) = 208 entries * 6 words = 1,248 words. Sim Core constant, independent of MatchRunner tunables."
+    added: 2026-11-09
+    revised: ""
+
+  - name: emit_accept
+    status: active
+    source: design/gdd/sim-core.md
+    referenced_by:
+      - design/gdd/sim-core.md
+    variables:
+      - obs_this_tick
+      - crit_this_tick
+      - OBS_CAP
+      - MAX_EVENTS_PER_TICK
+    output_range: [0, 1]
+    expression: "accept_obs = obs < OBS_CAP and obs + crit < MAX; accept_crit = obs + crit < MAX"
+    notes: "F5. Guarantees 9 critical slots per tick; critical bound 9 holds only under invariants I1-I5 (rule 18c)."
+    added: 2026-11-09
+    revised: ""
+
+  - name: lost_records
+    status: active
+    source: design/gdd/sim-core.md
+    referenced_by:
+      - design/gdd/sim-core.md
+    variables:
+      - event_seq
+      - EVENT_RING_ENTRIES
+      - next_seq
+    output_range: [0, event_seq]
+    expression: "lost = maxi(0, event_seq - EVENT_RING_ENTRIES - next_seq)"
+    notes: "F6. lost = 0 whenever a consumer reads at most 13 steps after its previous read."
+    added: 2026-11-09
+    revised: ""
+
+  - name: input_slot
+    status: active
+    source: design/gdd/sim-core.md
+    referenced_by:
+      - design/gdd/sim-core.md
+    variables:
+      - IN_BASE
+      - p
+      - tick
+      - INPUT_RING_TICKS
+    output_range: [IN_BASE, IN_BASE + 63]
+    expression: "slot = IN_BASE + p * INPUT_RING_TICKS + posmod(tick, INPUT_RING_TICKS)"
+    notes: "F10. Ring indexed by sim tick, frozen ticks included (EC-29 open for the Attack and Input GDDs)."
+    added: 2026-11-09
+    revised: ""
 
 # Example:
 #
@@ -156,7 +233,160 @@ formulas: []
 #
 # Required fields: name, status, source, referenced_by, value, unit, added
 
-constants: []
+constants:
+  - name: sim_ticks_per_second
+    status: active
+    source: design/gdd/sim-core.md
+    referenced_by:
+      - design/gdd/sim-core.md
+      - design/gdd/game-concept.md
+      - docs/architecture/adr-0001-sim-numeric-model.md
+      - docs/architecture/adr-0002-sim-view-split.md
+    value: 60
+    unit: ticks/s
+    added: 2026-11-09
+    revised: ""
+
+  - name: sim_buffer_word_budget
+    status: active
+    source: design/gdd/sim-core.md
+    referenced_by:
+      - design/gdd/sim-core.md
+    value: 2048
+    unit: words
+    added: 2026-11-09
+    revised: ""
+
+  - name: max_events_per_tick
+    status: active
+    source: design/gdd/sim-core.md
+    referenced_by:
+      - design/gdd/sim-core.md
+      - docs/architecture/adr-0002-sim-view-split.md
+    value: 16
+    unit: events
+    added: 2026-11-09
+    revised: ""
+
+  - name: obs_cap
+    status: active
+    source: design/gdd/sim-core.md
+    referenced_by:
+      - design/gdd/sim-core.md
+    value: 7
+    unit: events
+    notes: "Lowered from 8 to 7 on 2026-11-09 (CD-GDD-ALIGN); MAX - OBS_CAP must stay >= critical_event_bound."
+    added: 2026-11-09
+    revised: ""
+
+  - name: event_words
+    status: active
+    source: design/gdd/sim-core.md
+    referenced_by:
+      - design/gdd/sim-core.md
+    value: 6
+    unit: words
+    added: 2026-11-09
+    revised: ""
+
+  - name: event_ring_entries
+    status: active
+    source: design/gdd/sim-core.md
+    referenced_by:
+      - design/gdd/sim-core.md
+      - docs/architecture/adr-0002-sim-view-split.md
+    value: 208
+    unit: entries
+    added: 2026-11-09
+    revised: ""
+
+  - name: catchup_reserve
+    status: active
+    source: design/gdd/sim-core.md
+    referenced_by:
+      - design/gdd/sim-core.md
+      - docs/architecture/adr-0002-sim-view-split.md
+    value: 4
+    unit: ticks
+    added: 2026-11-09
+    revised: ""
+
+  - name: rollback_window_ticks
+    status: active
+    source: design/gdd/sim-core.md
+    referenced_by:
+      - design/gdd/sim-core.md
+      - docs/architecture/adr-0002-sim-view-split.md
+    value: 8
+    unit: ticks
+    added: 2026-11-09
+    revised: ""
+
+  - name: critical_event_bound
+    status: active
+    source: design/gdd/sim-core.md
+    referenced_by:
+      - design/gdd/sim-core.md
+    value: 9
+    unit: events/tick
+    notes: "Conservative bound; holds only under invariants I1-I5 (sim-core rule 18c). True bound 8."
+    added: 2026-11-09
+    revised: ""
+
+  - name: consumer_drain_bound
+    status: active
+    source: design/gdd/sim-core.md
+    referenced_by:
+      - design/gdd/sim-core.md
+    value: 13
+    unit: steps
+    added: 2026-11-09
+    revised: ""
+
+  - name: freeze_ticks_max
+    status: active
+    source: design/gdd/sim-core.md
+    referenced_by:
+      - design/gdd/sim-core.md
+      - design/gdd/game-concept.md
+    value: 150
+    unit: ticks
+    notes: "Creative-director hard cap (2.5 s cinematic). Tier 0 Ultimate freeze N = 60 (data, SP GDD)."
+    added: 2026-11-09
+    revised: ""
+
+  - name: input_ring_ticks
+    status: active
+    source: design/gdd/sim-core.md
+    referenced_by:
+      - design/gdd/sim-core.md
+    value: 32
+    unit: ticks
+    notes: "Provisional. The Attack System GDD owns the final value."
+    added: 2026-11-09
+    revised: ""
+
+  - name: proj_cap
+    status: active
+    source: design/gdd/sim-core.md
+    referenced_by:
+      - design/gdd/sim-core.md
+    value: 4
+    unit: projectiles
+    notes: "Assumption. The Projectiles GDD owns the final value."
+    added: 2026-11-09
+    revised: ""
+
+  - name: player_block_reserved_words
+    status: active
+    source: design/gdd/sim-core.md
+    referenced_by:
+      - design/gdd/sim-core.md
+    value: 3
+    unit: words
+    notes: "Offsets 0-2 of each per-player block: PF_PREV_X, PF_PREV_Y, PF_SNAP (sim-core rule 5). Movement fields start at offset 3."
+    added: 2026-11-09
+    revised: ""
 
 # Example:
 #
