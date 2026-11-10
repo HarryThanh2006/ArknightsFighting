@@ -1898,11 +1898,14 @@ pass.
   THEN each returns an `int` (or fills a caller-owned `int` array), and none
   returns an array that aliases the buffer.
 - **AC-X5** (I; rule 23, EC-0) GIVEN the golden replay of AC-V2, WHEN run on a
-  Debug build and a Release export, THEN all per-tick checksums match, and
-  the sim test suite yields identical buffers on both builds. **PARTIAL
-  (2026-11-10)**: golden replay (layout 4, 10,000 ticks) identical on Debug and
-  Release, 0 mismatching ticks, same digest; the test-suite half is not run in
-  Release. Evidence: `production/qa/evidence/2026-11-10-x5-debug-release-parity.md`.
+  Debug build and a Release export, THEN all per-tick checksums match.
+  *(Amended 2026-11-10, user decision: the clause "and the sim test suite
+  yields identical buffers on both builds" is dropped — the golden replay
+  covers the combat paths tick by tick and gdUnit4 does not run in an
+  exported build.)* **PASS (2026-11-10, one machine)**: layout 4, 10,000
+  ticks, 0 mismatching ticks, identical final checksum and digest on Debug and
+  Release. Re-run whenever the sim or layout changes. Evidence:
+  `production/qa/evidence/2026-11-10-x5-debug-release-parity.md`.
 - **AC-X6** (I; 18e, 18g, EC-16) GIVEN a speculative tick that sets
   `sim_fault = 1` and is later rolled back, WHEN the confirmed timeline is
   stepped, THEN `integrity_fault_confirmed` stays unset and no speculative
@@ -1919,7 +1922,7 @@ pass.
 - **AC-V2** (M; V4, ADR-0001 validation 3) GIVEN a 10,000-tick replay file,
   WHEN replayed on an Intel PC and an AMD PC and repeatedly in CI, THEN every
   per-tick checksum matches. Fewer than two vendors = **PARTIAL**, never a
-  pass. **PARTIAL (2026-11-10)**: the 10,000-tick golden replay recorded on an Intel i7-13620H (Windows) matched every per-tick checksum on an AMD EPYC 9V74 GitHub runner (Linux), CI run for 3035d9e. Not yet met: "repeatedly in CI" (one 10,000-tick run so far); the sim is mostly no-op / PLACEHOLDER slots, so the systems the check exists for are not exercised; Debug editor binaries only (Release is AC-X5). Evidence: `production/qa/evidence/2026-11-10-v4-cross-machine-replay.md`.
+  pass. **PARTIAL (2026-11-10)**: the 10,000-tick golden replay recorded on an Intel i7-13620H (Windows) matched every per-tick checksum on an AMD EPYC 9V74 GitHub runner (Linux), CI run for 3035d9e; **layout 4 with combat (2026-11-10):** matched on an AMD EPYC 9V45 runner (user screenshot, CI run for the layout-4 commits). Not yet met: "repeatedly in CI" (one 10,000-tick run so far); the sim is mostly no-op / PLACEHOLDER slots, so the systems the check exists for are not exercised; Debug editor binaries only (Release is AC-X5). Evidence: `production/qa/evidence/2026-11-10-v4-cross-machine-replay.md`.
 - **AC-V3** (P; V5, F9) GIVEN the Tier −1 sim on the development PC (hardware
   recorded), WHEN 10,000 ticks are stepped after warm-up, THEN the mean,
   p99 and p99.9 tick cost including checksum (and snapshot, once rollback

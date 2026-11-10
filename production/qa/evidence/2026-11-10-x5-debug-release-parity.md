@@ -1,8 +1,11 @@
 # AC-X5 Debug vs Release parity — 2026-11-10
 
-**Status: PARTIAL.** The golden replay half passes; the "sim test suite yields
-identical buffers on both builds" half has not been run (gdUnit4 runs only in the
-editor binary, not in an exported build).
+**Status: PASS (one machine), after the AC was amended.** The user decided on
+2026-11-10 that the golden-replay comparison is sufficient and dropped the
+"sim test suite yields identical buffers on both builds" clause (gdUnit4 runs
+only in the editor binary). Caveat: the golden fixture has no KO; the KO path's
+parity is supported by the V5 combat benchmark counting the same 38 KOs on
+both builds, not by per-tick checksums.
 
 ## What was run
 
