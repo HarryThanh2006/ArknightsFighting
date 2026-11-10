@@ -27,3 +27,7 @@
 # .gitattributes governs the INDEX. It does not retro-fix a working tree that
 # predates the rule -- run `git add --renormalize .` for that.
 .claude/**/*.md text eol=lf
+
+# Golden replay fixtures are compared byte-for-byte against SimReplay.to_text()
+# (always LF); a CRLF checkout would fail the round-trip test on Windows.
+tests/**/fixtures/*.txt text eol=lf
