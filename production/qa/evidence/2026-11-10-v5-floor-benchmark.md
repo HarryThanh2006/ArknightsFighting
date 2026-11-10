@@ -101,3 +101,29 @@ defense, events and round slots are empty), not a V5 pass.
 All five runs are inside the AC-V3 gate (mean, p99, p99.9 ≤ 250 µs). Movement's
 cost is below the run-to-run noise of the earlier floor runs (~18–20 µs mean);
 the per-tick checksum over 1,624 words still dominates.
+
+## Addendum — combat pipeline, layout 4 (same day, after 23520f0)
+
+Pipeline now runs Movement, Combat (attack, defense, hit resolution), Movement
+reactions and RoundFlow (`LAYOUT_VERSION` 4). Events (`SimEvents`), projectiles
+and SP / skills / Ultimate are still missing, so this is a **partial floor, not
+a V5 pass**. The benchmark now uses scripted aggressive combat inputs (seed 11)
+and restarts the match when it ends (restart untimed). Same counts in every run:
+**595 hits, 71 blocks, 15,766 hit-stop ticks, 38 KOs, 14 matches completed** —
+the combat paths are exercised.
+
+| Build | Run | Mean | p50 | p99 | p99.9 | Max (not gating) | `MEMORY_STATIC` Δ |
+|---|---|---|---|---|---|---|---|
+| Release | 16 | 23.90 | 23 | 50 | 127 | 753 | 0 |
+| Release | 17 | 24.50 | 23 | 62 | 174 | 14,070 | 0 |
+| Release | 18 | 24.34 | 23 | 66 | 177 | 737 | 0 |
+| Release | 19 | 24.63 | 23 | 67 | 163 | 793 | 0 |
+| Release | 20 | 24.82 | 23 | 67 | 165 | 1,782 | 0 |
+| **Release median** | | **24.50** | **23** | **66** | **165** | 793 | 0 |
+| Debug | 1 | 34.42 | 29 | 93 | 234 | 2,844 | 0 |
+
+**Reading:** all five Release runs meet the AC-V3 gate (mean, p99, p99.9 ≤ 250 µs);
+combat added ~5 µs to the mean and roughly doubled p99 / p99.9 versus the
+movement-only floor. Debug p99.9 (234 µs) is within 16 µs of the budget, so the
+missing systems (events, projectiles, SP) will likely push Debug over; the
+Release figure is the one AC-V3 judges.

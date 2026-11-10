@@ -1899,8 +1899,10 @@ pass.
   returns an array that aliases the buffer.
 - **AC-X5** (I; rule 23, EC-0) GIVEN the golden replay of AC-V2, WHEN run on a
   Debug build and a Release export, THEN all per-tick checksums match, and
-  the sim test suite yields identical buffers on both builds. **BLOCKED
-  (export templates not installed)**.
+  the sim test suite yields identical buffers on both builds. **PARTIAL
+  (2026-11-10)**: golden replay (layout 4, 10,000 ticks) identical on Debug and
+  Release, 0 mismatching ticks, same digest; the test-suite half is not run in
+  Release. Evidence: `production/qa/evidence/2026-11-10-x5-debug-release-parity.md`.
 - **AC-X6** (I; 18e, 18g, EC-16) GIVEN a speculative tick that sets
   `sim_fault = 1` and is later rolled back, WHEN the confirmed timeline is
   stepped, THEN `integrity_fault_confirmed` stays unset and no speculative
@@ -1927,8 +1929,10 @@ pass.
   `MatchRunner` absorbs up to `MAX_CATCHUP_TICKS` = 4 late ticks per frame, so
   an isolated slow tick is harmless; the floor run measured max 366 µs–1.2 ms
   with p99 ≤ 39 µs)*. A Debug-only figure is provisional; the pass requires a
-  Release measurement. **BLOCKED (V5 not yet measured; F8 / F9 are a model,
-  not a pass)**.
+  Release measurement. **PARTIAL (2026-11-10)**: with the combat pipeline
+  (layout 4) the Release median is mean 24.5 µs, p99 66, p99.9 165 and
+  `MEMORY_STATIC` Δ 0 — inside the gate, but events, projectiles and SP are not
+  in the pipeline yet. Evidence: `production/qa/evidence/2026-11-10-v5-floor-benchmark.md`.
 - **AC-V4** (M; Player Fantasy) GIVEN two PCs on LAN, WHEN a planted input
   divergence on one peer is detected at the correct tick, and then a
   10-minute unplanted match is played, THEN zero checksum mismatches are

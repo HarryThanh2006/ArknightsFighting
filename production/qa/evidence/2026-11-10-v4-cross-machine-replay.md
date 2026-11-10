@@ -29,6 +29,7 @@ that CPU is AMD, the run is the Intel-vs-AMD case ADR-0001 V4 asks for.
 | 2026-11-10 | #6 | 24b76b6 | not printed yet | 5,000 | pass (first cross-OS data point) |
 | 2026-11-10 | #7 | b5ee953 | not printed yet | 5,000 | pass |
 | 2026-11-10 | not confirmed (likely #8) | 3035d9e | AuthenticAMD, AMD EPYC 9V74 80-Core Processor, 4 CPUs (user screenshot of the Runner CPU step, 2026-11-10; run number not shown) | 10,000 | pass, all steps green |
+| 2026-11-10 | **pending — user to read** | 7fe4cda, 23520f0 (layout 4 fixture with combat) | (Runner CPU step of those runs) | 10,000 | pending CI result |
 
 Append a row per run you want to cite, copying the CPU line from the **Runner CPU** step.
 

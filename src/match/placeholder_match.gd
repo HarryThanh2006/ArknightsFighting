@@ -23,6 +23,11 @@ func _ready() -> void:
 		print(V5Bench.run())
 		get_tree().quit()
 		return
+	# Tooling hook: Debug vs Release replay parity (sim-core AC-X5).
+	if OS.get_cmdline_user_args().has("--replay-check"):
+		print(ReplayCheck.run())
+		get_tree().quit()
+		return
 	add_child(_hud)
 	_hud.position = Vector2(24, 24)
 	_runner = MatchRunner.new()
