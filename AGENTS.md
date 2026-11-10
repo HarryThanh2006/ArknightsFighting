@@ -8,7 +8,7 @@ them to continue the code, but the rules below come from them and still apply.
 
 **Arknights – Operator Clash** (`project.godot` name "Arknights Operator Clash"):
 a solo-developer, private, non-commercial fan 1v1 fighting game in **Godot 4.7.2 +
-GDScript**. 2.5D (3D chibi characters on a 2D fight plane). The core is a
+GDScript**. **2D sprite fighting game** (user decision 2026-11-10; was 2.5D / 3D chibi). The core is a
 **deterministic 60 Hz integer simulation** with per-tick checksums and replays,
 so two PCs (LAN, later rollback) and CI always compute bit-identical fights.
 Owner: Harry (writes in Vietnamese; reply to him in Vietnamese).
@@ -45,6 +45,11 @@ check `git log origin/main..main`. 93/93 tests pass and smoke exits 0 at
   official Arknights chibi art, which must not be pushed to a repository. Keep it
   local or replace the art with original work. The main game still renders
   placeholder fighters.
+- **2D decision (2026-11-10).** The game is now a 2D sprite fighter. Concept and
+  systems index are updated; the art bible carries a "needs revision for 2D"
+  banner and ADR-0002 an "amendment pending — 2D" note. Follow-ups: 2D art
+  bible revision, ADR-0002 2D amendment, rendering ADR (Forward+ vs
+  Compatibility). `prototypes/surtr-art-spike/` (3D) is now historical only.
 - **Remaining systems.** Dedicated Input and Arena systems, the SimEvents ring
   and the two-PC LAN spike remain open.
 

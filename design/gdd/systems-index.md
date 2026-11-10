@@ -10,7 +10,7 @@
 
 ## Overview
 
-Operator Clash is a 1v1 2.5D fighter whose whole mechanical scope hangs off one
+Operator Clash is a 1v1 2D (sprite) fighter whose whole mechanical scope hangs off one
 deterministic 60 Hz simulation. The game needs a small, deep set of systems
 rather than a broad one: no economy, no progression, no narrative, no save
 data. Everything a player feels — the combo flow, the class-specific SP charge,
@@ -87,7 +87,7 @@ presentation concern for Menus & Select, Arena and the art bible.
 - **Presentation & Feel** *(merged #16 + #17 + #18; inferred)* — camera framing
   and push-in, animation seeked to the sim tick, presentation-only slow-mo and
   shake, class-shape VFX and hit sparks. Reads sim events by tick number.
-- **Toon & Outline Rendering** *(inferred; no GDD)* — covered by the art bible
+- **Sprite Rendering & Animation (2D)** *(renamed 2026-11-10 from Toon & Outline Rendering — game is 2D; inferred; no GDD)* — covered by the art bible
   (§5, §6, §8) and a shader ADR.
 - **HUD** *(no GDD)* — specified by the UX spec `design/ux/hud.md` against art
   bible §7.
@@ -135,7 +135,7 @@ outside the sim entirely and must never write to it.
 | 13 | Opponent AI | Gameplay | MVP | Not Started | — | Sim Core & State, Input, Character Movement & State Machine, Attack System, Defense, SP, Skills & Ultimate, Projectiles |
 | 14 | Arena | Gameplay | MVP | Not Started | — | Sim Core & State |
 | 15 | Presentation & Feel (inferred) | Core | MVP | Not Started | — | Sim Core & State, Move Data Pipeline, Hit Detection & Damage, SP, Skills & Ultimate |
-| 16 | Toon & Outline Rendering (inferred) | Core | MVP | Not Started | design/art/art-bible.md + shader ADR (no GDD) | Presentation & Feel |
+| 16 | Sprite Rendering & Animation (2D) (inferred; was Toon & Outline Rendering) | Core | MVP | Not Started | design/art/art-bible.md (2D revision pending) + rendering ADR (no GDD) | Presentation & Feel |
 | 17 | HUD | UI | MVP | Not Started | design/ux/hud.md (UX spec, no GDD) | Sim Core & State, Hit Detection & Damage, SP, Skills & Ultimate, Round & Match Flow |
 | 18 | Menus & Select | UI | MVP | Not Started | — | Sim Core & State, Input, Round & Match Flow, Operator Definitions |
 | 19 | Audio | Audio | MVP | Not Started | — | Sim Core & State, Hit Detection & Damage, SP, Skills & Ultimate, Round & Match Flow |
@@ -159,7 +159,7 @@ when each GDD starts (not `minimal` — this project has no `design/game-brief.m
 |---|---|
 | **Full (all 8 sections)** | Character Movement & State Machine, Hit Detection & Damage, Attack System, Defense, SP Skills & Ultimate, Round & Match Flow, Opponent AI |
 | **Standard (5 sections + Formulas where numeric)** | Sim Core & State, Input, Replay & Checksum, Move Data Pipeline, Projectiles, Operator Definitions, Arena, Presentation & Feel, Menus & Select, Audio |
-| **No GDD** | Toon & Outline Rendering (art bible + ADR), HUD (UX spec), LAN at Tier −1 (spike report + ADR) |
+| **No GDD** | Sprite Rendering & Animation (2D) (art bible + ADR), HUD (UX spec), LAN at Tier −1 (spike report + ADR) |
 
 ---
 
@@ -220,7 +220,7 @@ fallback ("ship Tier 0 + early Tier 1, including LAN") consistent.
 > (1) **GDD cap:** during Tier −1, draft only the Foundation GDDs (Sim Core,
 > Movement, Hit Detection, Defense), ≤ 5 days total; every other GDD waits for
 > Tier −1 PASS, Combat GDD first. (2) **Art spike:** the last week of Tier −1,
-> after the LAN spike, timeboxed to 1 week: 1 rigid-part chibi model + 3
+> after the LAN spike, timeboxed to 1 week: 1 original 2D sprite character + 3
 > animations; its result sets the per-animation estimate before the Combat Slice
 > is committed. Counts inside the 9-week Tier −1 max.
 >
@@ -298,7 +298,7 @@ tick number so a future rollback cannot fire VFX or SFX twice.*
 
 1. **Presentation & Feel** — depends on: Sim Core & State, Move Data Pipeline,
    Hit Detection & Damage, SP Skills & Ultimate
-2. **Toon & Outline Rendering** — depends on: Presentation & Feel
+2. **Sprite Rendering & Animation (2D)** — depends on: Presentation & Feel
 3. **HUD** — depends on: Hit Detection & Damage, SP Skills & Ultimate, Round &
    Match Flow
 4. **Menus & Select** — depends on: Input, Round & Match Flow (out-of-sim half),
@@ -318,7 +318,7 @@ tick number so a future rollback cannot fire VFX or SFX twice.*
 **Bottlenecks** (an error here means rework across every layer above): Sim Core
 & State, Move Data Pipeline, Hit Detection & Damage, Input.
 **Leaves** (low risk, can be designed late): Operator Collection, Settings,
-Training Mode, Audio, Toon & Outline Rendering.
+Training Mode, Audio, Sprite Rendering & Animation (2D).
 
 ### TD-SYSTEM-BOUNDARY notes (CONCERNS, 2026-11-01) — carry into each GDD
 
@@ -432,7 +432,7 @@ same layer can be designed in parallel.*
 | 16 | HUD (UX spec `design/ux/hud.md`) | MVP | Presentation | ux-designer | M |
 | 17 | Menus & Select | MVP | Presentation | ux-designer | S |
 | 18 | Audio | MVP | Presentation | audio-director, sound-designer | S |
-| 19 | Toon & Outline Rendering (shader ADR) | MVP | Presentation | technical-artist | S |
+| 19 | Sprite Rendering & Animation (2D) (rendering ADR) | MVP | Presentation | technical-artist | S |
 | 20 | Settings | Alpha | Polish | ux-designer | S |
 | 21 | LAN Netcode | Alpha | Core / Polish | network-programmer | M |
 | 22 | Training Mode | Alpha | Polish | game-designer, ux-designer | S |
@@ -477,7 +477,7 @@ communicating through plain fields in the state buffer instead of calls.
 | Round & Match Flow | Design | Amiya (Auto SP) hits once then kites to timeout in Ch'en vs Amiya | **Mandatory acceptance criterion** in the GDD (walls or no walls) **before** Amiya is built; timeout = higher HP% wins |
 | SP, Skills & Ultimate | Design | Offensive SP snowballs; Defensive SP turtles; skill window becomes "run until it expires" | Counterplay floor + Throw beats Block; Pillar 2 design test (a); balance check after Tier 0 |
 | Opponent AI | Scope / Design | "AI Normal that is fun to fight" is tuning, not just code (L) | Seeded, tick-delayed reactions; possible third fallback cut (open for creative-director) |
-| Presentation & Feel | Scope | Animation volume — 1–3 days per animation for a newcomer; ~23 for Tier 0 | Rigid-part shared rig; shared reaction animations allowed (art bible §8); timebox per Operator |
+| Presentation & Feel | Scope | Animation volume — 2D sprite frames per move, hand-drawn; ~23 animations for Tier 0, cost per animation unknown until the 2D art spike | Shared reaction animations allowed; few key frames held on sim ticks; timebox per Operator; the 2D art spike sets the per-animation estimate (was: rigid-part shared rig, 2026-11-10) |
 | Input | Technical | Keyboard ghosting with two players on one keyboard | Gamepad support from Tier 0; separated default key clusters; input-test screen |
 
 ---
@@ -487,7 +487,7 @@ communicating through plain fields in the state buffer instead of calls.
 | Metric | Count |
 |--------|-------|
 | Total systems identified | 23 |
-| GDDs required (MVP) | 17 (+ HUD UX spec, + Toon shader ADR) |
+| GDDs required (MVP) | 17 (+ HUD UX spec, + 2D rendering ADR) |
 | Design docs started | 2 (Sim Core & State, Draft; Character Movement, Draft 2026-11-10, not reviewed) |
 | Design docs reviewed | 0 |
 | Design docs approved | 0 |

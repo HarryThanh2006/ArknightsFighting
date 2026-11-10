@@ -1,6 +1,8 @@
 # Art Bible: Arknights – Operator Clash: Tactical Deployment
 
-> **Status**: Approved
+> **Status**: **Needs revision for 2D (2026-11-10)** — was Approved. The user decided the game is a **2D sprite fighting game** (replacing 2.5D / 3D chibi). Until the 2D revision (a separate task), read this file as follows:
+> - **Superseded (3D-specific):** §3.3 environment geometry as 3D modules; §5.1 rigid-part construction; §5.5 camera yaw / 3D facing / LOD; §6.2 texturing of 3D surfaces; §8.1 file formats for meshes (glTF); §8.2 mesh / material naming; §8.4 geometry budgets and construction; §8.5 draw calls / materials / shaders; §8.6 3D texture import and VRAM; §8.7 Blender export and authoring; §8.8 AnimationPlayer keys on 3D rigs; §8.9 toon shader, inverted-hull outline, bloom / glow and backend; all lighting / key-light directions on 3D models.
+> - **Still valid:** §1 identity and the one-line rule; §2 saturation budget and per-state targets; §3.1–3.2 silhouette and class shape language, §3.4–3.5; §4 colour system (palette, class colours, P1 / P2 by frame not colour, colourblind backups); §5.2–5.4 and §5.6 (costume value structure, telling fighters apart, pose style, original designs of canon Operators); §6.1, §6.3–6.5 as layout and mood intent; §7 UI / HUD in full (text floor, layer order, typography, VI + EN); §8.10 UI assets; §8.11 provenance and originality; §9 references and reference hygiene (no copied or AI-generated official art).
 > **Owned By**: art-director
 > **Last Updated**: 2026-11-01
 > **Art Director Sign-Off (AD-ART-BIBLE)**: REVISED 2026-11-01 — review returned CONCERNS (3 must-fix: emissive hue clipping, Tier 0 floor-line contrast, UI clamp; 7 clarifications); all 10 re-drafted by art-director / technical-artist and approved by the user

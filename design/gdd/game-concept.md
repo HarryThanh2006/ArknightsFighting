@@ -3,6 +3,11 @@
 *Created: 2026-10-31*
 *Status: Draft*
 
+> **Quyết định 2026-11-10 (user): game đối kháng 2D dùng sprite**, thay cho hướng
+> 2.5D / chibi 3D ghép khối cứng. Sim không đổi (vốn là mặt phẳng 2D số nguyên).
+> Các mục bên dưới đã sửa theo quyết định này; art bible và ADR-0002 còn chờ sửa
+> cho 2D (xem banner trong từng file).
+
 > **Fan game, phi thương mại.** Arknights, các Operator và thế giới Terra thuộc
 > Hypergryph / Yostar. Mọi asset (model, texture, UI, âm thanh, logo, font) là bản
 > gốc tự làm hoặc placeholder; không sao chép tài sản có bản quyền. Kiểm tra quy
@@ -13,7 +18,7 @@
 ## Elevator Pitch
 
 > Game đối kháng 1v1 góc nhìn ngang, nơi bạn điều khiển các Operator Arknights
-> chibi 3D: combo nhanh và mượt, nạp SP theo đúng kiểu của class (tự nạp, nạp khi
+> chibi 2D (sprite): combo nhanh và mượt, nạp SP theo đúng kiểu của class (tự nạp, nạp khi
 > đánh trúng, nạp khi chịu đòn), rồi kích hoạt kỹ năng có thời hạn để lật ngược
 > trận đấu — chơi cùng máy hoặc qua LAN (Hamachi / Radmin) với bạn bè.
 
@@ -26,7 +31,7 @@ theo một kiểu khác nhau."
 
 | Aspect | Detail |
 | ---- | ---- |
-| **Genre** | Fighting game 1v1, 2.5D (đấu trường 3D, mặt phẳng chiến đấu ngang); anime arena fighter |
+| **Genre** | Fighting game 1v1, **2D** (sprite, mặt phẳng chiến đấu ngang); anime arena fighter |
 | **Platform** | PC (Windows), ứng dụng desktop cài đặt |
 | **Target Audience** | Mid-core: fan Arknights và người thích game đối kháng dễ vào nhưng có chiều sâu (xem Target Player Profile) |
 | **Player Count** | 1 người (vs AI), 2 người cùng máy, 2 người qua LAN / LAN ảo (Tier 1) |
@@ -321,8 +326,9 @@ trong ảnh đen trắng.*
 - Đỏ chỉ dành cho nguy hiểm và sát thương sắp tới.
 
 **Tạo hình nhân vật:** chibi khoảng **3 đầu** (không phải 2) để tầm đánh đọc được;
-một đạo cụ class quá khổ (khiên, trượng, cung) là chìa khóa silhouette; khối cơ bản
-vát cạnh + toon shader + outline inverted-hull; trail thể hiện đúng tầm thật của đòn.
+một đạo cụ class quá khổ (khiên, trượng, cung) là chìa khóa silhouette; **sprite 2D
+vẽ tay, nét viền rõ** (thay cho khối vát cạnh + toon shader + outline inverted-hull,
+quyết định 2026-11-10); trail thể hiện đúng tầm thật của đòn.
 
 ---
 
@@ -361,11 +367,11 @@ hình chỉ huy; các phân cảnh hành động anime (cut-in, speed line) dùn
 | ---- | ---- |
 | **Recommended Engine** | **Godot 4.7.2 + GDScript** (chọn qua `/setup-engine` 2026-10-31; cài đặt và test runner gdUnit4 đã kiểm chứng). Yêu cầu bắt buộc (TD-FEASIBILITY), áp vào Godot: sim là GDScript thuần (không Node, không PhysicsServer), tự step theo tick 60 Hz, step thủ công nhiều lần mỗi frame; state phẳng (Packed array); snapshot là bản copy tường minh vào bộ đệm cấp phát sẵn (Packed array gán là alias — ADR-0002), ngân sách ≤ 0,25 ms mỗi tick gồm cả snapshot + checksum (ADR-0001, **chưa đo** — kiểm V5); `PacketPeerUDP` cho LAN; số học fixed-point số nguyên (ADR-0001). Nên có: hot reload dữ liệu chiêu (chỉ ngoài trận), overlay debug-draw hitbox, input tách theo InputMap action cho từng người chơi, toon/outline shader, glow/halo theo art bible §8.9 (không bật glow của WorldEnvironment). |
 | **Key Technical Challenges** | Mô phỏng tất định (hit-stop, slow-mo, cinematic không được dùng time scale của engine); netcode game đối kháng qua LAN ảo; khối lượng animation; công cụ frame data; input buffer/cancel/ưu tiên đòn; ghosting khi 2 người chung bàn phím |
-| **Art Style** | 2.5D — 3D stylized (chibi ~3 đầu, toon shader + outline) |
-| **Art Pipeline Complexity** | High (custom 3D) — giảm bằng model chibi ghép khối cứng (không skinning), animation chỉ để trình bày |
+| **Art Style** | **2D sprite** (chibi ~3 đầu, nét viền rõ, màu phẳng) — quyết định 2026-11-10, thay cho 2.5D 3D stylized |
+| **Art Pipeline Complexity** | High (sprite tự vẽ, từng khung) — chi phí chính là số khung mỗi đòn; animation chỉ để trình bày. Mọi sprite là bản gốc tự vẽ, không lấy hình từ game |
 | **Audio Needs** | Moderate — nhạc menu, nhạc đấu trường, SFX đòn đánh / kỹ năng / UI; volume nhạc và SFX tách riêng |
 | **Networking** | P2P qua LAN / LAN ảo (Hamachi, Radmin), IP trực tiếp, UDP; delay-based trước, thiết kế state sẵn cho rollback |
-| **Content Volume** | Tier 0: 2 Operator × 10–12 animation, 1 đấu trường. Full vision: 10 Operator, 7 đấu trường |
+| **Content Volume** | Tier 0: 2 Operator × 10–12 animation sprite, 1 đấu trường 2D. Full vision: 10 Operator, 7 đấu trường |
 | **Procedural Systems** | Không có procedural generation; model placeholder dựng từ khối cơ bản |
 
 **Ghi chú kiến trúc bắt buộc từ ngày đầu (TD-FEASIBILITY):**
@@ -406,7 +412,7 @@ hình chỉ huy; các phân cảnh hành động anime (cut-in, speed line) dùn
 - Tính tất định bị phá ngầm (time scale, physics, RNG toàn cục, delta time).
 - Netcode qua Hamachi/Radmin (20–80 ms, khoảng 1–5 frame một chiều); broadcast
   discovery thường hỏng trên adapter ảo; hộp thoại Windows Firewall.
-- Animation 3D không có họa sĩ; mocap/retarget kém phù hợp với tỉ lệ chibi.
+- Animation sprite không có họa sĩ: mỗi đòn là nhiều khung vẽ tay; chi phí mỗi animation đo ở spike art 2D.
 - Ghosting bàn phím khi 2 người chung máy → hỗ trợ gamepad từ Tier 0.
 - **Sẽ thành HIGH RISK nếu:** đưa online/rollback vào Tier 0; dùng physics hoặc
   collider theo animation cho hitbox; cam kết roster Tier 2 hoặc Tag Versus trước
@@ -430,8 +436,8 @@ hình chỉ huy; các phân cảnh hành động anime (cut-in, speed line) dùn
 
 ### Open Questions
 - **Float có kiểm soát hay fixed-point?** → đã chọn fixed-point số nguyên (ADR-0001, Proposed).
-- **Model khối cứng hay skinned mesh?** → đã chốt khối cứng, không skinning (art bible
-  §8.4, `design/art/art-bible.md`); kiểm chứng bằng animation đầu tiên trong timebox.
+- ~~**Model khối cứng hay skinned mesh?**~~ → không còn áp dụng: game chuyển sang 2D sprite
+  (2026-11-10). Câu hỏi mới: độ phân giải sprite và số khung mỗi đòn → spike art 2D.
 - **LAN qua Hamachi có chơi được không?** → spike LAN 1 tuần cuối Tier −1.
 - **Cảm giác đòn có "nhanh và mượt" không?** → đo ở Combat Slice (Tier −1 chỉ chứng
   minh nền móng). Prototype mirror-feel 2026-11-01: chưa có bằng chứng lưu lại — không
@@ -457,11 +463,11 @@ Qua Tier −1 nghĩa là **nền móng dùng được**, không phải giả thu
 chứng minh — giả thuyết chỉ được đo ở gate Combat Slice.
 
 **Mốc đầu Tier 0 — Combat Slice (quyết định 2026-11-01):** bắt đầu *sau khi Tier −1
-qua*. Nội dung: Ch'en + Amiya, Lungmen Street 3D, combat đầy đủ (đòn riêng từng
+qua*. Nội dung: Ch'en + Amiya, Lungmen Street 2D, combat đầy đủ (đòn riêng từng
 Operator, Throw, SP + kỹ năng, Ultimate), HUD combat, Victory/Defeat, Rematch. Người
 đấu người; không có AI, LAN, Training, Settings. Perfect Guard/Dodge: không có trong
 Combat Slice; quyết ở gate của slice. Làm theo 3 chặng: (a) Ch'en khối hộp, (b) Amiya +
-projectile, (c) art 3D + Ultimate sau cùng. **Không mở rộng roster** trước khi Combat
+projectile, (c) art sprite 2D + Ultimate sau cùng. **Không mở rộng roster** trước khi Combat
 Slice qua gate.
 **Gate Combat Slice** (người quyết: user): timebox 10–14 tuần, **tính từ ngày ghi nhận
 Tier −1 PASS**; checkpoint tuần 7. Mỗi cặp dùng chung một nút Rematch, nên chấm **theo
@@ -475,7 +481,7 @@ bao giờ tính là pass. *FAIL:* retrospective thiết kế → **một** lần
 hai → pivot; roster vẫn đóng băng. Kết quả thô ghi vào `/playtest-report` trước khi quyết.
 3 cặp là tín hiệu định hướng, không phải bằng chứng thống kê.
 *Gate không phụ thuộc chặng (c):* playtest chạy được với model/animation blockout (phần
-sim của Ultimate vẫn có), nhưng đòn trúng phải có hit-stop và SFX tạm; art 3D và cinematic Ultimate nếu chưa xong thì làm sau gate,
+sim của Ultimate vẫn có), nhưng đòn trúng phải có hit-stop và SFX tạm; art sprite và cinematic Ultimate nếu chưa xong thì làm sau gate,
 không kéo dài timebox.
 
 **Required for MVP (Tier 0)**:
@@ -518,7 +524,7 @@ minh được concept.
 | Tier | Content | Features | Timeline |
 | ---- | ---- | ---- | ---- |
 | **Tier −1: Vertical Slice** | 1 Operator (khối hộp), 1 mặt phẳng đấu trường | Light/Heavy/Block, sim tất định, replay + checksum, spike LAN | 4–6 tuần (tối đa 9) |
-| **Tier 0a: Combat Slice** (mốc đầu Tier 0) | Ch'en, Amiya; Lungmen Street 3D | Combat đầy đủ, HUD combat, Victory/Defeat, Rematch; không AI/LAN/Training/Settings | 10–14 tuần (nằm trong Tier 0) |
+| **Tier 0a: Combat Slice** (mốc đầu Tier 0) | Ch'en, Amiya; Lungmen Street 2D | Combat đầy đủ, HUD combat, Victory/Defeat, Rematch; không AI/LAN/Training/Settings | 10–14 tuần (nằm trong Tier 0) |
 | **Tier 0: MVP** | Ch'en, Amiya; Lungmen Street | Như "Required for MVP" | +3,5–7 tháng (dự kiến 5); tổng tới MVP ~6,5 tháng |
 | **Tier 1: Chơi với bạn bè** | +Mudrock (cuối cùng) | Theo thứ tự: Settings → Training → LAN delay-based → AI Easy/Hard → cinematic đầy đủ → Mudrock | +2,5–5 tháng (dự kiến 3,5) |
 | **Tier 2: Full Vision** (danh sách mong muốn) | Tối đa 10 Operator, 7 đấu trường | Operator Collection, cinematic cho mọi Operator, màn chọn đấu trường đầy đủ | 30+ tháng tổng (solo) |

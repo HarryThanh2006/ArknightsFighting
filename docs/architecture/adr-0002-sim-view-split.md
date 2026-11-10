@@ -6,6 +6,8 @@ Proposed
 ## Date
 2026-11-01
 
+> **Amendment pending — 2D (2026-11-10).** The user decided the game is a 2D sprite fighter. The sim / view split itself (rules 1–5, 8, 9; MatchRunner, SimView, events, presentation clock) is **unchanged**. Clauses that assumed 3D and need a 2D amendment: rule 6 axis table (`Vector3`, fight plane `Z = 0`, camera on `+Z`, 20–30° yaw child) → likely `Node2D`, `X = x_su × px_per_su`, `Y = −y_su × px_per_su`; facing via the 3D root's `scale.x` → `flip_h` / `scale.x` on the sprite root; rule 7 poses via `AnimationMixer` manual processing + `seek(t, true)` on a 3D rig (W1) → frame selection by sim move id + frame (`AnimatedSprite2D.frame` or `AnimationPlayer` on `Sprite2D.frame`), re-verify W1 for that; **W6** mirrored-mesh / inverted-hull capture → a mirrored-sprite check (no winding or culling issue in 2D). Status stays Proposed.
+
 ## Last Verified
 2026-11-01
 

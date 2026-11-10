@@ -37,7 +37,7 @@ engine:
   name: "Godot"
   version: "4.7.2"
   language: "GDScript"
-  rendering: "Forward+"
+  rendering: "Forward+"  # TODO (2026-11-10, game is 2D): consider Compatibility / Mobile renderer; decide in the rendering ADR
   physics: "Jolt"
 
 specialists:
