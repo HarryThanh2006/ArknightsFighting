@@ -29,6 +29,11 @@ jobs:
       # shows it); VERSION.md's "4.7" is not one. version: installed runs the
       # gdUnit4 committed in addons/ -- without it the action deletes that
       # copy and installs the latest release, which may not match your tests.
+      # ADR-0001 V4 evidence: the golden replay (tests/integration/sim_core) was
+      # recorded on an Intel i7-13620H; record which CPU replays it here.
+      - name: Runner CPU
+        run: lscpu | grep -E 'Model name|Vendor ID|^CPU\(s\)'
+
       - name: Run GdUnit4 Tests
         uses: godot-gdunit-labs/gdUnit4-action@v1
         with:

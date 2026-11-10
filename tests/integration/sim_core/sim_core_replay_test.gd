@@ -4,7 +4,7 @@ extends GdUnitTestSuite
 ## ADR-0001 validation 3 runs on every CI OS). Reads one committed fixture file.
 
 const FIXTURE: String = "res://tests/integration/sim_core/fixtures/golden_replay.txt"
-const FIXTURE_TICKS: int = 5000
+const FIXTURE_TICKS: int = 10_000
 
 
 func _load() -> SimReplay:

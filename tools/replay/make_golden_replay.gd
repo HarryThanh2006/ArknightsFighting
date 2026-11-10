@@ -7,7 +7,7 @@ extends SceneTree
 const OUT_PATH: String = "res://tests/integration/sim_core/fixtures/golden_replay.txt"
 const SIM_SEED: int = 20261110
 const INPUT_SEED: int = 7
-const TICKS: int = 5000
+const TICKS: int = 10_000  # ADR-0001 V4 length
 ## Input generator words: neutral, left, right (SimPipeline PLACEHOLDER bits).
 const CHOICES: Array[int] = [0, 1, 2]
 
