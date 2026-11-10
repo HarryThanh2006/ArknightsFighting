@@ -28,8 +28,20 @@ that CPU is AMD, the run is the Intel-vs-AMD case ADR-0001 V4 asks for.
 |---|---|---|---|---|---|
 | 2026-11-10 | #6 | 24b76b6 | not printed yet | 5,000 | pass (first cross-OS data point) |
 | 2026-11-10 | #7 | b5ee953 | not printed yet | 5,000 | pass |
+| 2026-11-10 | not confirmed (likely #8) | 3035d9e | AuthenticAMD, AMD EPYC 9V74 80-Core Processor, 4 CPUs (user screenshot, relayed; not seen by Claude) | 10,000 | pass, all steps green |
 
 Append a row per run you want to cite, copying the CPU line from the **Runner CPU** step.
+
+## Status against AC-V2 / V4 (2026-11-10): PARTIAL
+
+- Met: 10,000-tick replay; Intel recording (i7-13620H) vs AMD replay (EPYC 9V74);
+  every per-tick checksum matched.
+- Not met: "repeatedly in CI" (one 10,000-tick run so far); the sim is mostly
+  no-op / PLACEHOLDER slots, so movement, hit detection, events and round logic
+  (the code most likely to diverge) are not exercised yet; Debug editor binaries
+  only (Release parity is AC-X5).
+- Re-check when the real Foundation / Core systems replace the placeholders and
+  the fixture is regenerated.
 
 ## Fixture history
 

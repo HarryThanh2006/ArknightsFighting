@@ -1914,7 +1914,7 @@ pass.
 - **AC-V2** (M; V4, ADR-0001 validation 3) GIVEN a 10,000-tick replay file,
   WHEN replayed on an Intel PC and an AMD PC and repeatedly in CI, THEN every
   per-tick checksum matches. Fewer than two vendors = **PARTIAL**, never a
-  pass. **BLOCKED (V4 not yet run)**.
+  pass. **PARTIAL (2026-11-10)**: the 10,000-tick golden replay recorded on an Intel i7-13620H (Windows) matched every per-tick checksum on an AMD EPYC 9V74 GitHub runner (Linux), CI run for 3035d9e. Not yet met: "repeatedly in CI" (one 10,000-tick run so far); the sim is mostly no-op / PLACEHOLDER slots, so the systems the check exists for are not exercised; Debug editor binaries only (Release is AC-X5). Evidence: `production/qa/evidence/2026-11-10-v4-cross-machine-replay.md`.
 - **AC-V3** (P; V5, F9) GIVEN the Tier −1 sim on the development PC (hardware
   recorded), WHEN 10,000 ticks are stepped after warm-up, THEN the mean,
   p99 and p99.9 tick cost including checksum (and snapshot, once rollback
