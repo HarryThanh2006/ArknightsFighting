@@ -5,7 +5,7 @@ class_name SimLayout
 ## Sizes other than the two headers and the event ring are F3 estimates until each
 ## owning GDD fixes its fields. Snapshots are `buffer.duplicate()`: assignment aliases (ADR-0001 R7).
 
-const LAYOUT_VERSION: int = 1
+const LAYOUT_VERSION: int = 2
 ## Hard word limit (user decision 2026-11-09).
 const SIM_BUFFER_WORD_BUDGET: int = 2_048
 
@@ -35,6 +35,9 @@ const P_STRIDE: int = 64
 const PF_PREV_X: int = 0
 const PF_PREV_Y: int = 1
 const PF_SNAP: int = 2
+## PLACEHOLDER until the Movement GDD places its fields (from offset 3): position in su.
+const PF_X: int = 3
+const PF_Y: int = 4
 
 # --- Input history ring (F10): b[IN_BASE + p * INPUT_RING_TICKS + posmod(tick, INPUT_RING_TICKS)] ---
 const IN_BASE: int = 144
@@ -57,6 +60,8 @@ const AI_SIZE: int = 32
 # --- Round & Match ---
 const ROUND_BASE: int = 352
 const ROUND_SIZE: int = 16
+## PLACEHOLDER until the Round & Match GDD fixes its fields: non-zero = match Ended (rule 7a).
+const R_MATCH_OVER: int = 352
 
 # --- Arena ---
 const ARENA_BASE: int = 368

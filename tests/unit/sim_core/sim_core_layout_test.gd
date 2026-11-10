@@ -7,6 +7,7 @@ extends GdUnitTestSuite
 ## constant, sorted by name. Change a constant -> bump LAYOUT_VERSION and add its entry here.
 const GOLDEN_FINGERPRINT: Dictionary = {
 	1: "742b3a01fc0ac5df829d5b503490ab02",
+	2: "bcfe64794bfed202af70e9b6c9f0fc4e",  # + PF_X, PF_Y, R_MATCH_OVER placeholders
 }
 
 
