@@ -55,9 +55,9 @@ naming:
   scenes: snake_case
 
 commands:
-  # TODO: godot is not on PATH here (not installed yet) — set the editor's full path via /settings
-  # TODO: build needs an export preset name; none exists until the Godot project is created
-  build: "[TO BE CONFIGURED]"
-  test: "godot --headless -s -d --remote-debug tcp://127.0.0.1:0 res://addons/gdUnit4/bin/GdUnitCmdTool.gd -a res://tests --ignoreHeadlessMode"
-  run: "godot --path . --windowed --resolution 1280x720"
-  smoke: "godot --headless --quit-after 5"
+  # godot is not on PATH: every command uses the repo-local editor binary Godot/godot.exe (gitignored).
+  # build: "Windows Desktop" preset in export_presets.cfg; templates 4.7.2.stable in %APPDATA%/Godot/export_templates.
+  build: "Godot/godot.exe --headless --path . --export-release \"Windows Desktop\" build/windows/ArknightsFighting.exe"
+  test: "Godot/godot.exe --headless -s -d --remote-debug tcp://127.0.0.1:0 res://addons/gdUnit4/bin/GdUnitCmdTool.gd -a res://tests --ignoreHeadlessMode"
+  run: "Godot/godot.exe --path . --windowed --resolution 1280x720"
+  smoke: "Godot/godot.exe --path . --headless --quit-after 5"
