@@ -16,6 +16,11 @@ var _boxes: Array[ColorRect] = []
 
 
 func _ready() -> void:
+	# Tooling hook: the Release V5 floor benchmark (exported builds ignore -s).
+	if OS.get_cmdline_user_args().has("--v5-bench"):
+		print(V5Bench.run())
+		get_tree().quit()
+		return
 	_runner = MatchRunner.new()
 	_runner.process_priority = -100  # ADR-0002: runner processes first
 	_runner.input_sampler = _sample_input
