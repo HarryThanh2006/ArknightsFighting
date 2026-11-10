@@ -124,7 +124,7 @@ outside the sim entirely and must never write to it.
 | 2 | Input | Core | MVP | Not Started | — | Sim Core & State |
 | 3 | Replay & Checksum | Core | MVP | Not Started | — | Sim Core & State, Input, Move Data Pipeline |
 | 4 | Move Data Pipeline | Core | MVP | Not Started | — | Sim Core & State |
-| 5 | Character Movement & State Machine (inferred) | Gameplay | MVP | Not Started | — | Sim Core & State, Input, Move Data Pipeline, Arena |
+| 5 | Character Movement & State Machine (inferred) | Gameplay | MVP | Draft | design/gdd/character-movement.md | Sim Core & State, Input, Move Data Pipeline, Arena |
 | 6 | Hit Detection & Damage | Gameplay | MVP | Not Started | — | Sim Core & State, Move Data Pipeline, Character Movement & State Machine |
 | 7 | Attack System | Gameplay | MVP | Not Started | — | Sim Core & State, Input, Move Data Pipeline, Character Movement & State Machine, Hit Detection & Damage |
 | 8 | Defense | Gameplay | MVP | Not Started | — | Sim Core & State, Character Movement & State Machine, Hit Detection & Damage, Attack System |
@@ -488,10 +488,10 @@ communicating through plain fields in the state buffer instead of calls.
 |--------|-------|
 | Total systems identified | 23 |
 | GDDs required (MVP) | 17 (+ HUD UX spec, + Toon shader ADR) |
-| Design docs started | 1 (Sim Core & State, Draft) |
+| Design docs started | 2 (Sim Core & State, Draft; Character Movement, Draft 2026-11-10, not reviewed) |
 | Design docs reviewed | 0 |
 | Design docs approved | 0 |
-| MVP systems designed | 1/19 |
+| MVP systems designed | 1/19 (+1 Draft) |
 | Vertical Slice systems designed | n/a (tier not used; Tier −1 uses a prototype brief) |
 
 ---
