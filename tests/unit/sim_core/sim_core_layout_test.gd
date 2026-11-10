@@ -6,8 +6,7 @@ extends GdUnitTestSuite
 ## Golden fingerprint per LAYOUT_VERSION: MD5 of "NAME=value;" over every SimLayout
 ## constant, sorted by name. Change a constant -> bump LAYOUT_VERSION and add its entry here.
 const GOLDEN_FINGERPRINT: Dictionary = {
-	1: "742b3a01fc0ac5df829d5b503490ab02",
-	2: "bcfe64794bfed202af70e9b6c9f0fc4e",  # + PF_X, PF_Y, R_MATCH_OVER placeholders
+	2: "e55fe9fca1b5e9c51a86dbceada021e4",  # + PF_X, PF_Y, R_MATCH_OVER placeholders
 }
 
 
@@ -31,7 +30,8 @@ func _regions() -> Array[PackedInt64Array]:
 static func _fingerprint() -> String:
 	var script: Script = load("res://src/sim/sim_layout.gd")
 	var consts: Dictionary = script.get_script_constant_map()
-	var names: Array = consts.keys()
+	# PackedStringArray: sorting the StringName keys directly is not alphabetical (order varied run to run).
+	var names := PackedStringArray(consts.keys())
 	names.sort()
 	var text: String = ""
 	for n: String in names:
