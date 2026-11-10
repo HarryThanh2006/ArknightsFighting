@@ -1917,9 +1917,13 @@ pass.
   pass. **BLOCKED (V4 not yet run)**.
 - **AC-V3** (P; V5, F9) GIVEN the Tier −1 sim on the development PC (hardware
   recorded), WHEN 10,000 ticks are stepped after warm-up, THEN the mean,
-  p99 and maximum tick cost including checksum (and snapshot, once rollback
+  p99 and p99.9 tick cost including checksum (and snapshot, once rollback
   exists) are each ≤ 0.25 ms, and `Performance.MEMORY_STATIC` changes by 0
-  over the run. A Debug-only figure is provisional; the pass requires a
+  over the run. The maximum is recorded but does not gate *(user decision
+  2026-11-10: on a desktop OS a single preempted tick always exceeds it, and
+  `MatchRunner` absorbs up to `MAX_CATCHUP_TICKS` = 4 late ticks per frame, so
+  an isolated slow tick is harmless; the floor run measured max 366 µs–1.2 ms
+  with p99 ≤ 39 µs)*. A Debug-only figure is provisional; the pass requires a
   Release measurement. **BLOCKED (V5 not yet measured; F8 / F9 are a model,
   not a pass)**.
 - **AC-V4** (M; Player Fantasy) GIVEN two PCs on LAN, WHEN a planted input

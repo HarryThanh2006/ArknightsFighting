@@ -51,6 +51,7 @@ static func run() -> String:
 	sorted.sort()
 	var mean: float = float(total_usec) / float(TICKS)
 	var p99: int = sorted[int(TICKS * 0.99)]
+	var p999: int = sorted[int(TICKS * 0.999)]
 	var p50: int = sorted[TICKS >> 1]
 	var mx: int = sorted[TICKS - 1]
 	var lines := PackedStringArray([
@@ -58,7 +59,7 @@ static func run() -> String:
 		"engine: %s | debug_build: %s | os: %s" % [Engine.get_version_info()["string"], OS.is_debug_build(), OS.get_name()],
 		"cpu: %s (%d logical)" % [OS.get_processor_name(), OS.get_processor_count()],
 		"buffer words: %d | ticks: %d after %d warm-up" % [SimLayout.TOTAL, TICKS, WARMUP_TICKS],
-		"per tick (snapshot + step incl. checksum), usec: mean %.2f | p50 %d | p99 %d | max %d | budget %.0f" % [mean, p50, p99, mx, BUDGET_USEC],
+		"per tick (snapshot + step incl. checksum), usec: mean %.2f | p50 %d | p99 %d | p99.9 %d | max %d (not gating) | budget %.0f" % [mean, p50, p99, p999, mx, BUDGET_USEC],
 		"components, usec/call: hash_words %.2f | snapshot+first write %.2f" % [hash_usec, snap_usec],
 		"MEMORY_STATIC delta over run: %d bytes" % (mem_after - mem_before),
 	])

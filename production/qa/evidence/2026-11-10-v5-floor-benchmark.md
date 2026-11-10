@@ -58,3 +58,26 @@ the laptop throttled); its mean is not representative.
   `hash_words`) while the per-tick figure stayed stable, so they are noise-
   dominated on this laptop and not quoted as results. Release `hash_words`
   ≈ 16.5–18.5 µs per 1,624 words, consistent with the F8 model (≈ 18.8 µs).
+
+## Addendum — p99.9 gate (same day)
+
+The user changed the AC-V3 gate on 2026-11-10: **mean, p99 and p99.9 ≤ 250 µs; the
+maximum is recorded but does not gate** (`MatchRunner` absorbs isolated late ticks,
+`MAX_CATCHUP_TICKS` = 4). The benchmark now reports p99.9. Five more Release runs,
+same machine and setup, still a **FLOOR (no-op slots), not a V5 pass**:
+
+| Build | Run | Mean | p50 | p99 | p99.9 | Max (not gating) | `MEMORY_STATIC` Δ |
+|---|---|---|---|---|---|---|---|
+| Release | 6 | 20.66 | 19 | 41 | 123 | 1,269 | 0 |
+| Release | 7 | 20.71 | 19 | 46 | 173 | 2,696 | 0 |
+| Release | 8 | 24.83 | 21 | 74 | **426** | 32,979 | 0 |
+| Release | 9 | 18.06 | 17 | 35 | 101 | 725 | 0 |
+| Release | 10 | 19.10 | 18 | 46 | 148 | 3,388 | 0 |
+
+**Reading:** p99.9 is 101–173 µs in 4 of 5 runs, but **426 µs in run 8**, which
+exceeded the budget even with an empty pipeline. Run 8 also has the highest mean and a 33 ms
+max, consistent with background load on the laptop during that run. With 100,000
+ticks, p99.9 is the 100th-slowest tick, so it is sensitive to OS activity. Before
+a real V5 verdict, the measurement procedure should fix the conditions (idle
+machine, several runs, report the median run) — or the gate should say how many
+runs and which run is judged.
