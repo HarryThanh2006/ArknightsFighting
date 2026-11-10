@@ -9,8 +9,8 @@ const SPLITMIX_GAMMA: int = -7046029254386353131
 ## splitmix64 multipliers 0xBF58476D1CE4E5B9 and 0x94D049BB133111EB as signed int64.
 const SPLITMIX_MUL1: int = -4658895280553007687
 const SPLITMIX_MUL2: int = -7723592293110705685
-## PROPOSED (OQ-1, EC-31): state word written by ensure_nonzero when both words are 0.
-## Same value as SPLITMIX_GAMMA; fixed here until the ADR-0001 amendment is Accepted.
+## State word written by ensure_nonzero when both words are 0 (EC-31); same value as SPLITMIX_GAMMA.
+## Decided 2026-11-10 (ADR-0001 amendment A1).
 const NONZERO_FALLBACK: int = -7046029254386353131
 
 
@@ -19,7 +19,7 @@ static func _lsr(x: int, n: int) -> int:
 	return (x >> n) & ((1 << (64 - n)) - 1)
 
 
-## PROPOSED (OQ-1, EC-31): expands `seed_value` with splitmix64 (two successive outputs)
+## Decided 2026-11-10 (ADR-0001 amendment A1): expands `seed_value` with splitmix64 (two successive outputs)
 ## into b[slot], b[slot + 1], then ensure_nonzero. Any int seed is valid, including 0, -1, INT64_MIN.
 static func seed(b: PackedInt64Array, slot: int, seed_value: int) -> void:
 	var x: int = seed_value

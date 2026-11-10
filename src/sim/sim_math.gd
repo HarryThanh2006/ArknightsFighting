@@ -7,9 +7,8 @@ class_name SimMath
 const SU_PER_METER: int = 10_000
 ## 1.0x as a permille ratio (ADR-0001 rule 2).
 const PERMILLE: int = 1_000
-## PROPOSED (OQ-2, EC-33, AC-P7): result of div_floor / mod_floor when b == 0.
-## ADR-0001 still says "b must be non-zero"; the value is fixed here until the
-## ADR amendment is Accepted. Guarded in every build.
+## Result of div_floor / mod_floor when b == 0, guarded in every build (EC-33, AC-P7).
+## Decided 2026-11-10 (ADR-0001 amendment A1).
 const ZERO_DIVISOR_RESULT: int = 0
 ## Debug-only operand bound for mul_permille (ADR-0001 R4): |value|, |ratio| <= 2^31
 ## keeps value * ratio far below 2^63.

@@ -1798,7 +1798,7 @@ pass.
   regions, and no other word changes.
 - **AC-P7** (U; EC-33) GIVEN `SimMath`, WHEN `div_floor(5, 0)` and
   `mod_floor(5, 0)` are called, THEN each returns the defined value with no
-  engine error. **BLOCKED (ADR-0001 amendment defining the value)**.
+  engine error. *(Unblocked 2026-11-10: value 0, ADR-0001 A1.)*
 - **AC-P8** (C; EC-0) GIVEN `src/sim/`, WHEN CI runs, THEN it fails on a
   planted `assert(` placed before a state write in the same function.
 
@@ -1881,8 +1881,8 @@ pass.
 - **AC-X1** (U; rule 20, EC-31) GIVEN seeds 0, −1 and INT64_MIN, WHEN `init`
   runs, THEN `rng_s0 | rng_s1 ≠ 0` and 1,000 draws are not all equal;
   `ensure_nonzero(0, 0)` returns a non-zero state; the golden sequence for
-  seed 12345 matches the committed values. **BLOCKED (ADR-0001 must define
-  `SimRng.seed`)**.
+  seed 12345 matches the committed values. *(SimRng part unblocked 2026-11-10,
+  ADR-0001 A1; the `init` part waits for `Sim`.)*
 - **AC-X2** (U; rule 21, A1, EC-26) GIVEN snapshot S taken at tick 100 with
   checksum C₁₀₀, WHEN the sim restores S, THEN `SimHash.hash_words(buffer)`
   equals C₁₀₀ before any step; WHEN it steps 50 ticks, restores S again and steps the same 50
@@ -1979,8 +1979,8 @@ this GDD; ADR changes go through `/architecture-decision` or
 
 | # | Question | Target |
 |---|---|---|
-| OQ-1 | ADR-0001: define `SimRng.seed()` (splitmix64 expansion) and `ensure_nonzero` with its fixed constant (EC-31; unblocks AC-X1) | Before ADR-0001 is Accepted |
-| OQ-2 | ADR-0001: define the zero-divisor result of `div_floor` / `mod_floor` (proposed 0; EC-33; unblocks AC-P7) | Before ADR-0001 is Accepted |
+| OQ-1 | ~~ADR-0001: define `SimRng.seed()` (splitmix64 expansion) and `ensure_nonzero` with its fixed constant (EC-31; unblocks AC-X1)~~ **Resolved 2026-11-10** by ADR-0001 amendment A1 (user-approved): splitmix64 → xorshift128+ 23/18/5, `NONZERO_FALLBACK = -7046029254386353131` | — |
+| OQ-2 | ~~ADR-0001: define the zero-divisor result of `div_floor` / `mod_floor` (proposed 0; EC-33; unblocks AC-P7)~~ **Resolved 2026-11-10** by ADR-0001 amendment A1 (user-approved): result 0, every build | — |
 | OQ-3 | ADR-0001: record the `%` ban outside `SimMath` and `posmod`'s measured semantics (rule 15a) | Before ADR-0001 is Accepted |
 | OQ-4 | ADR-0001 R7 / ADR-0002 rule 9: `duplicate()` is lazily copy-on-write (measured) | Before either ADR is Accepted |
 | OQ-5 | ADR-0002 rule 3.2: input words for tick T + D stay outside the buffer (rule 7) | Before ADR-0002 is Accepted |
