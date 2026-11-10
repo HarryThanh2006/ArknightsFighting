@@ -1478,7 +1478,7 @@ only the composition root `SimPipeline` names the systems (rule 13).
 
 | Prerequisite | Kind | What Sim Core needs from it | Status |
 |---|---|---|---|
-| ADR-0001 Sim Numeric Model | Hard (architecture) | Integer-only model, su / permille / ticks, `SimMath`, `SimRng`, `SimHash`, forbidden tokens | **Proposed** — GDD stays Draft until Accepted; amendments pending (`SimRng.seed` + `ensure_nonzero`, zero-divisor result, `%` ban, lazy-COW note) |
+| ADR-0001 Sim Numeric Model | Hard (architecture) | Integer-only model, su / permille / ticks, `SimMath`, `SimRng`, `SimHash`, forbidden tokens | **Proposed** — GDD stays Draft until Accepted; `SimRng.seed` + `ensure_nonzero` and the zero-divisor result settled by amendment A1 (2026-11-10); still pending: `%` ban, lazy-COW note |
 | ADR-0002 Sim / View Split | Hard (architecture) | `MatchRunner` stepping, `SimView`, event ring, prev/snap interpolation | **Proposed** — amendments pending (rule 5 event contract and level-check clarification, rule 3.2 T + D outside the buffer, rule 9 note) |
 | Evidence-First Deterministic Integrity constraint | Hard (project rule) | Labelled claims, V4 / V5 gates, no bypass of the pipeline, review + regression tests for determinism changes | Binding (systems index, user 2026-11-09) |
 | Godot 4.7.2 engine behaviour | Hard (platform) | Measured on Debug: `int` wrap, `PackedInt64Array` aliasing, `duplicate()` lazy copy, out-of-range write aborts the function, negative index wraps, `posmod` floor-mod. **Unverified:** Release builds (asserts, out-of-range writes, `posmod`, division), cross-CPU equality (V4), tick cost (V5) | Partly Measured; Release blocked on export templates |
