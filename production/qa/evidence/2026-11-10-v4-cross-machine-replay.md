@@ -29,7 +29,7 @@ that CPU is AMD, the run is the Intel-vs-AMD case ADR-0001 V4 asks for.
 | 2026-11-10 | #6 | 24b76b6 | not printed yet | 5,000 | pass (first cross-OS data point) |
 | 2026-11-10 | #7 | b5ee953 | not printed yet | 5,000 | pass |
 | 2026-11-10 | not confirmed (likely #8) | 3035d9e | AuthenticAMD, AMD EPYC 9V74 80-Core Processor, 4 CPUs (user screenshot of the Runner CPU step, 2026-11-10; run number not shown) | 10,000 | pass, all steps green |
-| 2026-11-10 | not shown in screenshot (user checked the run for 426eda1) | 426eda1 (layout 4 fixture with combat) | AuthenticAMD, AMD EPYC 9V45 96-Core Processor, 4 CPUs (user screenshot) | 10,000 | pass, Run GdUnit4 Tests green |
+| 2026-11-10 | not shown in screenshot | unconfirmed, most likely 426eda1 (latest push; layout 4 fixture with combat) | AuthenticAMD, AMD EPYC 9V45 96-Core Processor, 4 CPUs (user screenshot) | 10,000 | pass, Run GdUnit4 Tests green |
 
 Append a row per run you want to cite, copying the CPU line from the **Runner CPU** step.
 
