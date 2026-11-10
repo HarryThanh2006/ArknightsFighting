@@ -2,7 +2,7 @@ class_name Movement
 ## Character Movement, Tier −1 subset (design/gdd/character-movement.md): walk,
 ## facing (with the attack / airborne lock), symmetric pushbox separation, stage
 ## walls and corner push-out. Runs in the "movement & state" slot. Static only.
-## Jump, knockback and max distance are later steps (GDD § Tier −1 subset).
+## Jump and max distance are later steps (GDD § Tier −1 subset).
 ## shortcut: tuning values are consts here until the Move Data Pipeline / Operator
 ## Definitions exist; then they come from integer data validated before init.
 
@@ -21,6 +21,7 @@ const MSTATE_AIR: int = 2
 const MSTATE_LANDING: int = 3
 
 ## Derived states (M10); only the ones whose source fields exist today.
+const DERIVED_STUN: int = 6
 const DERIVED_IDLE: int = 0
 const DERIVED_WALK: int = 1
 const DERIVED_ATTACK: int = 2
@@ -29,6 +30,7 @@ const DERIVED_AIR: int = 4
 const DERIVED_LANDING: int = 5
 
 ## Input bits (PLACEHOLDER until the Input GDD fixes them, M3).
+const INPUT_BLOCK: int = 16
 const INPUT_LEFT: int = 1
 const INPUT_RIGHT: int = 2
 
@@ -37,6 +39,9 @@ const INPUT_RIGHT: int = 2
 static func init(b: PackedInt64Array) -> void:
 	for p: int in SimLayout.P_COUNT:
 		var base: int = SimLayout.P_BASE + p * SimLayout.P_STRIDE
+		for offset: int in range(SimLayout.PF_X, SimLayout.PF_KB_DIR + 1):
+			b[base + offset] = 0
+		b[base + SimLayout.PF_HITSTUN] = 0
 		var side: int = -1 if p == 0 else 1
 		b[base + SimLayout.PF_X] = side * START_X_SU
 		b[base + SimLayout.PF_FACING] = -side
@@ -52,7 +57,7 @@ static func step(b: PackedInt64Array) -> void:
 		b[base + SimLayout.PF_MSTATE_TICKS] += 1
 		var vx: int = 0
 		var d: int = derived(b, p)
-		if d == DERIVED_IDLE or d == DERIVED_WALK:
+		if (d == DERIVED_IDLE or d == DERIVED_WALK) and not (b[SimLayout.IN_BASE + p * SimLayout.INPUT_RING_TICKS + slot] & INPUT_BLOCK):
 			var w: int = b[SimLayout.IN_BASE + p * SimLayout.INPUT_RING_TICKS + slot]
 			var dir_world: int = (1 if w & INPUT_RIGHT else 0) - (1 if w & INPUT_LEFT else 0)
 			var facing: int = b[base + SimLayout.PF_FACING]
@@ -129,9 +134,11 @@ static func facing_from_dx(dx: int, current: int) -> int:
 	return current
 
 
-## M10 derived state (read-only). KO, throw, hitstun and blockstun join when their owners exist.
+## M10 derived state for voluntary locomotion.
 static func derived(b: PackedInt64Array, p: int) -> int:
 	var base: int = SimLayout.P_BASE + p * SimLayout.P_STRIDE
+	if b[base + SimLayout.PF_HITSTUN] > 0 or b[base + SimLayout.PF_BLOCKSTUN] > 0:
+		return DERIVED_STUN
 	if b[base + SimLayout.PF_ATK_ACTIVE] != 0:
 		return DERIVED_ATTACK
 	match b[base + SimLayout.PF_MSTATE]:
@@ -142,3 +149,26 @@ static func derived(b: PackedInt64Array, p: int) -> int:
 		MSTATE_LANDING:
 			return DERIVED_LANDING
 	return DERIVED_WALK if b[base + SimLayout.PF_VX] != 0 else DERIVED_IDLE
+
+## M16/F7: hit knockback moves the defender, block recoil moves the attacker.
+static func reactions(b: PackedInt64Array, was_stopped: int, kit: SimMoveData) -> void:
+	for p: int in SimLayout.P_COUNT:
+		var i: int = SimLayout.P_BASE + p * SimLayout.P_STRIDE
+		var incoming: int = b[SimLayout.HIT_BASE + (1 - p) * SimLayout.HIT_STRIDE]
+		var outgoing: int = b[SimLayout.HIT_BASE + p * SimLayout.HIT_STRIDE]
+		if (was_stopped & (1 << p)) == 0:
+			b[i + SimLayout.PF_HITSTUN] = maxi(0, b[i + SimLayout.PF_HITSTUN] - 1)
+		if incoming > 0:
+			b[i + SimLayout.PF_HITSTUN] = kit.move(incoming)["hitstun"]
+			b[i + SimLayout.PF_KB_SPEED] = kit.move(incoming)["kb"]
+			var opponent: int = SimLayout.P_BASE + (1 - p) * SimLayout.P_STRIDE
+			b[i + SimLayout.PF_KB_DIR] = b[opponent + SimLayout.PF_FACING]
+		elif outgoing < 0:
+			b[i + SimLayout.PF_KB_SPEED] = kit.move(-outgoing)["recoil"]
+			b[i + SimLayout.PF_KB_DIR] = -b[i + SimLayout.PF_FACING]
+		if was_stopped & (1 << p) or b[i + SimLayout.PF_HITSTOP] > 0:
+			continue
+		var speed: int = b[i + SimLayout.PF_KB_SPEED]
+		b[i + SimLayout.PF_X] += b[i + SimLayout.PF_KB_DIR] * speed
+		b[i + SimLayout.PF_KB_SPEED] = maxi(0, speed - kit.kb_decel())
+	resolve(b)

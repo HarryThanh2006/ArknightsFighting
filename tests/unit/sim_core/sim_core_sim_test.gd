@@ -39,7 +39,8 @@ func test_init_zeroes_all_but_version_and_rng_and_returns_checksum() -> void:
 	# Movement init writes start positions and facing; PLACEHOLDER Arena init writes the walls.
 	var allowed: Array[int] = [SimLayout.H_LAYOUT_VERSION, SimLayout.H_RNG_S0, SimLayout.H_RNG_S1,
 		P0_BASE + SimLayout.PF_X, P1_X, P0_BASE + SimLayout.PF_FACING,
-		SimLayout.P_BASE + SimLayout.P_STRIDE + SimLayout.PF_FACING, SimLayout.A_WALL_L, SimLayout.A_WALL_R]
+		SimLayout.P_BASE + SimLayout.P_STRIDE + SimLayout.PF_FACING, SimLayout.A_WALL_L, SimLayout.A_WALL_R,
+		P0_BASE + SimLayout.PF_HP, P0_BASE + SimLayout.P_STRIDE + SimLayout.PF_HP, SimLayout.R_ROUND, SimLayout.R_CLOCK]
 	for i: int in SimLayout.TOTAL:
 		if not allowed.has(i):
 			assert_int(s.buffer[i]).override_failure_message("word %d" % i).is_equal(0)

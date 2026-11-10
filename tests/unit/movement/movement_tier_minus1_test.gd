@@ -214,7 +214,7 @@ func test_hitstop_skips_own_advance() -> void:
 	for t: int in 3:
 		s.step(R, 0)
 	assert_int(_x(s, 0)).is_equal(0)
-	s.buffer[BASE0 + SimLayout.PF_HITSTOP] = 0  # Hit Detection owns the decrement
+	assert_int(s.buffer[BASE0 + SimLayout.PF_HITSTOP]).is_equal(0)
 	s.step(R, 0)
 	assert_int(_x(s, 0)).is_equal(340)
 

@@ -6,6 +6,7 @@ extends GdUnitTestSuite
 ## Golden fingerprint per LAYOUT_VERSION: MD5 of "NAME=value;" over every SimLayout
 ## constant, sorted by name. Change a constant -> bump LAYOUT_VERSION and add its entry here.
 const GOLDEN_FINGERPRINT: Dictionary = {
+	4: "bdf0a438bf6b92ff7abb585b2a9b8d5e",  # Tier -1 combat and round flow
 	2: "e55fe9fca1b5e9c51a86dbceada021e4",  # + PF_X, PF_Y, R_MATCH_OVER placeholders
 	3: "bcb202a81387774e91b1936cea55595c",  # + Movement fields, PF_ATK_ACTIVE / PF_HITSTOP placeholders, arena walls
 }

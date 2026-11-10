@@ -34,7 +34,11 @@ var _pause_started_usec: int = 0
 
 ## Starts a match with `seed_value`; the clock origin is `now_usec`.
 func start_match(seed_value: int, now_usec: int) -> void:
-	_sim = Sim.new()
+	var kit := SimMoveData.load_default()
+	if kit == null:
+		push_error("Cannot start match: invalid move data")
+		return
+	_sim = Sim.new(kit)
 	last_checksum = _sim.init(seed_value)
 	view = SimView.new(_sim)
 	_match_start_usec = now_usec

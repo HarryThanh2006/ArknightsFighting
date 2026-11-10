@@ -7,17 +7,25 @@ extends RefCounted
 ## All mutable sim state, laid out by SimLayout. Never alias it outside this object.
 var buffer: PackedInt64Array = PackedInt64Array()
 ## Read-only integer move tables (SimData once the Move Data Pipeline exists).
-var data: RefCounted = null
+var _data: SimMoveData
+var data: SimMoveData:
+	get: return _data
+
+func _init(kit: SimMoveData = SimMoveData.load_default()) -> void:
+	_data = kit
 
 
 ## Rule 20: zeroes the buffer, writes layout_version, seeds the PRNG, runs every
 ## system init. Returns the tick-0 checksum. Round & Match `setup` is added with its GDD.
 func init(seed_value: int) -> int:
+	if data == null:
+		push_error("Invalid move data; match cannot start")
+		return 0
 	buffer.resize(SimLayout.TOTAL)
 	buffer.fill(0)
 	buffer[SimLayout.H_LAYOUT_VERSION] = SimLayout.LAYOUT_VERSION
 	SimRng.seed(buffer, SimLayout.H_RNG_S0, seed_value)
-	SimPipeline.init_all(buffer)
+	SimPipeline.init_all(buffer, data)
 	return SimHash.hash_words(buffer)
 
 
@@ -31,7 +39,7 @@ func step(w0: int, w1: int) -> int:
 	if b[SimLayout.H_FREEZE_TICKS] > 0:
 		b[SimLayout.H_FREEZE_TICKS] -= 1
 	else:
-		SimPipeline.block_b(b)
+		SimPipeline.block_b(b, data)
 	return SimHash.hash_words(b)
 
 

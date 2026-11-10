@@ -6,14 +6,16 @@ class_name SimPipeline
 ## Arena init is a PLACEHOLDER until the Arena GDD.
 ## Adding, removing or reordering a slot changes results: architecture review + tests (rule 13).
 
-## PLACEHOLDER Arena: half-width of the stage, su (walls at -/+ this; 10 m stage).
+const Combat = preload("res://src/sim/combat.gd")
+const RoundFlow = preload("res://src/sim/round_flow.gd")
+## PLACEHOLDER Arena: half-width of the stage, su (10 m stage).
 const PLACEHOLDER_STAGE_HALF_SU: int = 50_000
 
 
 ## Per-system init hooks, same order as step (rule 13). Buffer is already zeroed.
-static func init_all(b: PackedInt64Array) -> void:
+static func init_all(b: PackedInt64Array, kit: SimMoveData) -> void:
 	_placeholder_arena_init(b)
-	Movement.init(b)
+	RoundFlow.start(b, kit)
 
 
 ## Block A (rule 8): always runs on a live or frozen tick.
@@ -33,17 +35,24 @@ static func block_a(b: PackedInt64Array, w0: int, w1: int) -> void:
 
 
 ## Block B (rule 10): gated slots in fixed order, including the defense slot (10a).
-static func block_b(b: PackedInt64Array) -> void:
+static func block_b(b: PackedInt64Array, kit: SimMoveData) -> void:
+	if b[SimLayout.R_INTERVAL] > 0:
+		RoundFlow.advance_interval(b, kit)
+		return
 	_placeholder_ai(b)            # AI writes its input word
 	pass                          # command interpretation
 	Movement.step(b)              # movement & state
-	pass                          # attack advance
-	pass                          # defense (10a)
+	Combat.attack(b, kit)
+	Combat.defense(b)
 	pass                          # projectiles
-	pass                          # hit resolution
-	pass                          # reactions applied (Movement M16 knockback, later)
+	var was_stopped: int = 0
+	for player: int in SimLayout.P_COUNT:
+		if b[Combat.base(player) + SimLayout.PF_HITSTOP] > 0:
+			was_stopped |= 1 << player
+	Combat.resolve(b, kit)
+	Movement.reactions(b, was_stopped, kit)
 	pass                          # SP / skill / Ultimate
-	pass                          # round checks (clock, KO, timeout, match_over)
+	RoundFlow.check(b)
 
 
 ## PLACEHOLDER (Opponent AI slot): draws once from the shared PRNG so its state is exercised.

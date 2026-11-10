@@ -5,7 +5,7 @@ class_name SimLayout
 ## Sizes other than the two headers and the event ring are F3 estimates until each
 ## owning GDD fixes its fields. Snapshots are `buffer.duplicate()`: assignment aliases (ADR-0001 R7).
 
-const LAYOUT_VERSION: int = 3
+const LAYOUT_VERSION: int = 4
 ## Hard word limit (user decision 2026-11-09).
 const SIM_BUFFER_WORD_BUDGET: int = 2_048
 
@@ -45,10 +45,16 @@ const PF_MSTATE: int = 8
 const PF_MSTATE_TICKS: int = 9
 const PF_KB_SPEED: int = 10
 const PF_KB_DIR: int = 11
-## PLACEHOLDER until the Attack GDD places its fields: non-zero = an active move (Movement M8, M10).
+## Attack owns move ID, frame and contact latch.
 const PF_ATK_ACTIVE: int = 16
-## PLACEHOLDER until the Hit Detection GDD places its fields: hit-stop ticks left (Movement M4).
+## Remaining personal hit-stop, owned by Hit Detection.
 const PF_HITSTOP: int = 17
+const PF_ATK_FRAME: int = 18
+const PF_CONNECTED: int = 19
+const PF_HP: int = 20
+const PF_HITSTUN: int = 21
+const PF_BLOCKSTUN: int = 22
+const PF_BLOCKING: int = 23
 
 # --- Input history ring (F10): b[IN_BASE + p * INPUT_RING_TICKS + posmod(tick, INPUT_RING_TICKS)] ---
 const IN_BASE: int = 144
@@ -71,8 +77,14 @@ const AI_SIZE: int = 32
 # --- Round & Match ---
 const ROUND_BASE: int = 352
 const ROUND_SIZE: int = 16
-## PLACEHOLDER until the Round & Match GDD fixes its fields: non-zero = match Ended (rule 7a).
+## Round & Match state. Result codes: 0 draw, 1 player one, 2 player two.
 const R_MATCH_OVER: int = 352
+const R_CLOCK: int = 353
+const R_WINS_0: int = 354
+const R_WINS_1: int = 355
+const R_ROUND: int = 356
+const R_INTERVAL: int = 357
+const R_RESULT: int = 358
 
 # --- Arena ---
 const ARENA_BASE: int = 368
