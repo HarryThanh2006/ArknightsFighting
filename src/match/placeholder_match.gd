@@ -11,6 +11,8 @@ const CENTRE_X_PX: float = 640.0
 ## Fixed seed for the placeholder match.
 const MATCH_SEED: int = 1
 
+const Combat = preload("res://src/sim/combat.gd")
+var _hud := Label.new()
 var _runner: MatchRunner
 var _boxes: Array[ColorRect] = []
 
@@ -21,6 +23,8 @@ func _ready() -> void:
 		print(V5Bench.run())
 		get_tree().quit()
 		return
+	add_child(_hud)
+	_hud.position = Vector2(24, 24)
 	_runner = MatchRunner.new()
 	_runner.process_priority = -100  # ADR-0002: runner processes first
 	_runner.input_sampler = _sample_input
@@ -44,11 +48,24 @@ func _sample_input(player: int) -> int:
 		w |= Movement.INPUT_LEFT
 	if Input.is_physical_key_pressed(right):
 		w |= Movement.INPUT_RIGHT
+	if Input.is_physical_key_pressed(KEY_F if player == 0 else KEY_KP_1) or (player == 1 and Input.is_physical_key_pressed(KEY_COMMA)):
+		w |= Combat.LIGHT
+	if Input.is_physical_key_pressed(KEY_G if player == 0 else KEY_KP_2) or (player == 1 and Input.is_physical_key_pressed(KEY_PERIOD)):
+		w |= Combat.HEAVY
+	if Input.is_physical_key_pressed(KEY_H if player == 0 else KEY_KP_3) or (player == 1 and Input.is_physical_key_pressed(KEY_SLASH)):
+		w |= Combat.BLOCK
 	return w
 
 
 ## Called by MatchRunner each frame (ADR-0002 rule 3.4): lerp prev -> curr unless snapped.
 func update_view(view: SimView, alpha: float) -> void:
+	var status: String = "Round %d   %ds" % [view.round_number(), ceili(view.clock_ticks() / 60.0)]
+	if view.ended():
+		status = "P%d wins the match   [R] Rematch" % view.result()
+	elif view.interval():
+		status = "Draw - replay round" if view.result() == 0 else "P%d wins round" % view.result()
+	_hud.text = "%s     P1 %d HP  %s     P2 %d HP  %s     Score %d - %d\nP1  A/D   F Light   G Heavy   H Block       P2  Arrows   , Light   . Heavy   / Block" % [
+		status, view.hp(0), view.stance(0), view.hp(1), view.stance(1), view.wins(0), view.wins(1)]
 	for p: int in _boxes.size():
 		var x_su: float = float(view.pos_x_su(p))
 		var y_su: float = float(view.pos_y_su(p))
@@ -58,3 +75,27 @@ func update_view(view: SimView, alpha: float) -> void:
 		var m := Vector2(x_su, y_su) / float(SimMath.SU_PER_METER)
 		_boxes[p].position = Vector2(CENTRE_X_PX + m.x * PX_PER_M - BOX_SIZE.x * 0.5,
 			FLOOR_Y_PX - m.y * PX_PER_M - BOX_SIZE.y)
+	queue_redraw()
+
+func _unhandled_key_input(event: InputEvent) -> void:
+	var key := event as InputEventKey
+	if key != null and key.pressed and not key.echo and key.physical_keycode == KEY_R:
+		if _runner != null and _runner.view != null and _runner.view.ended():
+			_runner.start_match(MATCH_SEED, Time.get_ticks_usec())
+
+## Draw active strike boxes in the same facing-local coordinates as contact tests.
+func _draw() -> void:
+	if _runner == null or _runner.view == null:
+		return
+	var view: SimView = _runner.view
+	var scale_su: float = PX_PER_M / float(SimMath.SU_PER_METER)
+	for p: int in _boxes.size():
+		for box: Array in view.hitboxes(p):
+			var x: int = box[0]
+			var y: int = box[1]
+			var hw: int = box[2]
+			var hh: int = box[3]
+			var feet := _boxes[p].position + Vector2(BOX_SIZE.x * 0.5, BOX_SIZE.y)
+			var centre := feet + Vector2(view.facing(p) * x, -y) * scale_su
+			var extent := Vector2(hw, hh) * scale_su
+			draw_rect(Rect2(centre - extent, extent * 2.0), Color.GOLD)

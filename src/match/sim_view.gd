@@ -41,3 +41,51 @@ func snap(player: int) -> bool:
 
 func freeze_ticks() -> int:
 	return _sim.buffer[SimLayout.H_FREEZE_TICKS]
+
+## Player and round values for the Tier -1 HUD.
+func hp(p: int) -> int:
+	return _sim.buffer[SimLayout.P_BASE + p * SimLayout.P_STRIDE + SimLayout.PF_HP]
+
+func wins(p: int) -> int:
+	return _sim.buffer[SimLayout.R_WINS_0 + p]
+
+func clock_ticks() -> int:
+	return _sim.buffer[SimLayout.R_CLOCK]
+
+func round_number() -> int:
+	return _sim.buffer[SimLayout.R_ROUND]
+
+func interval() -> bool:
+	return _sim.buffer[SimLayout.R_INTERVAL] > 0
+
+func ended() -> bool:
+	return _sim.buffer[SimLayout.R_MATCH_OVER] != 0
+
+func result() -> int:
+	return _sim.buffer[SimLayout.R_RESULT]
+
+func stance(p: int) -> String:
+	var i: int = SimLayout.P_BASE + p * SimLayout.P_STRIDE
+	if hp(p) == 0:
+		return "KO"
+	if _sim.buffer[i + SimLayout.PF_HITSTUN] > 0:
+		return "Hit"
+	if _sim.buffer[i + SimLayout.PF_BLOCKING] != 0 or _sim.buffer[i + SimLayout.PF_BLOCKSTUN] > 0:
+		return "Block"
+	match _sim.buffer[i + SimLayout.PF_ATK_ACTIVE]:
+		1: return "Light"
+		2: return "Heavy"
+	return ""
+
+func move_id(p: int) -> int:
+	return _sim.buffer[SimLayout.P_BASE + p * SimLayout.P_STRIDE + SimLayout.PF_ATK_ACTIVE]
+
+func move_frame(p: int) -> int:
+	return _sim.buffer[SimLayout.P_BASE + p * SimLayout.P_STRIDE + SimLayout.PF_ATK_FRAME]
+
+func facing(p: int) -> int:
+	return _sim.buffer[SimLayout.P_BASE + p * SimLayout.P_STRIDE + SimLayout.PF_FACING]
+
+## Immutable facing-local boxes for this exact simulation frame.
+func hitboxes(p: int) -> Array:
+	return _sim.data.boxes(move_id(p), move_frame(p), "hitboxes")
