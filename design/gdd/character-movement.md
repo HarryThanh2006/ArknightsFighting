@@ -218,7 +218,10 @@ loop is needed; results never depend on that order because each step reads
 values from before the step for both players):
 1. Advance `mstate` timers (`PREJUMP` → `AIR`, `LANDING` → `GROUND`).
 2. Compute and apply walk / jump / airborne motion (M6, M7).
-3. Max distance (M15), then separation (M11), corner push-out (M14), bounds (M13).
+3. Max distance (M15), bounds clamp of both (M13), separation (M11), corner
+   push-out (M14), final bounds clamp. *(Bounds first: found while implementing
+   2026-11-10 — a character walking into a wall with nobody near is otherwise
+   never clamped.)*
 4. Landing check (M7), facing (M8).
 
 The reactions slot runs: knockback step (M16), then step 3 again.
