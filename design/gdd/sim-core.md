@@ -1394,8 +1394,11 @@ divisor** †:
   owns facing (Interactions table) and must adopt this rule as written; any
   other `dx == 0` behaviour, or extra conditions (e.g. no turning while
   airborne or during an attack), is an amendment to this rule, not a
-  replacement. No Movement GDD exists yet, so there is nothing to conflict
-  with today.
+  replacement. **Amendment (user, 2026-11-10; `character-movement.md` M8):**
+  facing is **not** re-evaluated while the character is attacking or airborne
+  (it keeps the previous tick's value) and is re-evaluated on the first tick
+  the lock clears; the `dx == 0` rule is unchanged. *Flag for the next
+  `/design-review` of this GDD.*
   Facing is always ±1, never 0; `init` sets both values (P0 `+1`, P1 `−1`,
   through the setup owned by Round & Match). Facing-dependent math divides the
   non-negative facing-local magnitude and applies the sign last (ADR-0001 rule

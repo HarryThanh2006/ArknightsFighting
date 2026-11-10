@@ -16,6 +16,8 @@ values are integers in sim units (1 m = 10,000 su) and ticks (ADR-0001). Players
 feel it as honest spacing: a step back always moves the same distance, and the
 corner is a place you are pushed into, never a place where the rules change.
 
+> **Decisions 2026-11-10 (user):** the nine choices offered with this draft are decided — no cross-ups (M11), no dash in Tier 0 (M12), derived-state composition (M10), walk 340 / 270 (F1), fixed-arc jump (M7, F2), max distance 6 m away-only (M15, F6), knockback decay (M16, F7), round reset by request (M9) as proposed; **facing locks while attacking or airborne** (M8, the alternative). Values remain starting values until Tier −1 data (systems-index decision 2026-11-01).
+
 > **Quick reference** — Layer: `Feature` · Priority: `MVP` · Key deps: `Sim Core & State, Input, Move Data Pipeline, Arena`
 > **Tier −1 subset**: walk, facing, pushbox separation, stage bounds (§ Tier −1 subset). Jump, max distance and knockback follow.
 
@@ -125,14 +127,19 @@ When `y ≤ 0` after the update: `y = 0`, `vx = 0`, `vy = 0`, `mstate = LANDING`
 Jump is **not** in the Tier −1 subset; it is required by Air attacks (Tier 0,
 third in the cut order). **[Proposed]**
 
-**M8. Facing.** Adopts sim-core EC-33 as written: with `dx = x_opponent −
-x_self`, `facing = +1` if `dx > 0`, `−1` if `dx < 0`, unchanged if `dx = 0`.
-Evaluated once per tick for both players **after** separation and bounds in the
-movement slot, from the same pre-update positions for both (P0 and P1 never
-see each other's new facing first). Because pushboxes block passing (M11),
-`dx` cannot change sign in normal play; the rule matters for setup errors and
-future side-swap mechanics. No extra conditions (airborne, mid-attack) in this
-draft. **[Proposed — EC-33 rule adopted; extra conditions deferred]**
+**M8. Facing.** Sim-core EC-33 plus one amendment (decided 2026-11-10, user;
+recorded in sim-core EC-33). With `dx = x_opponent − x_self`, a character whose
+facing is **unlocked** takes `facing = +1` if `dx > 0`, `−1` if `dx < 0`, and
+keeps it if `dx = 0`. Facing is **locked** (kept from the previous tick) while
+the character is **attacking** (`derived = ATTACK`, M10) or **airborne**
+(`mstate = AIR`). It is re-evaluated on the first tick the lock is off, so a
+character that ends an attack or lands facing the wrong way turns on that
+tick. Evaluated once per tick for both players **after** separation and bounds
+in the movement slot; both players' `dx` and lock are read before either
+facing is written, so P0 and P1 never see each other's new facing first.
+Because pushboxes block passing (M11), `dx` cannot change sign in normal play;
+the lock matters for setup errors and future side-swap mechanics (e.g. a
+throw that swaps sides). **Decided 2026-11-10 (user)**
 
 **M9. Snap.** Movement sets `snap = 1` on any discontinuous position change:
 a round reset applied by Movement (Round & Match writes a reset request in its
@@ -171,12 +178,12 @@ separate regardless of `y`, so nobody can jump over or walk through the other
 (no cross-ups in Tier 0). When `|dx| < hw_a + hw_b`, both characters are pushed
 apart by the same amount, `ceil(overlap / 2)` each (F3) — no player-index or
 side tie-break, so swapping P0 / P1 or mirroring the stage gives mirrored
-results. **[Proposed — no cross-ups is a user decision]**
+results. **Decided 2026-11-10 (user)**
 
 **M12. Dash.** Not in this draft's Tier 0 scope: the concept's core mechanics
 list walk ("di chuyển"), jump (Air attacks) and Dodge (Defense, cut first), not
 dash. Words 12–15 are reserved so a dash or Dodge can be added with a layout
-bump. **[Proposed — user to confirm]**
+bump. **Decided 2026-11-10 (user)**
 
 **M13. Stage bounds.** The Arena region holds `wall_l` and `wall_r` (su,
 written at init). After any position change Movement clamps each centre to
@@ -387,6 +394,11 @@ per-player block was already sized 64. **[Verified arithmetic]**
   jump starts only after `LANDING_TICKS`, and only if UP is still held then
   (no buffering here; buffering is Attack / Input's call).
 - **EC-M12. Facing with `dx = 0`.** Unchanged (EC-33).
+- **EC-M14. Opponent ends up behind during an attack or a jump.** Cannot
+  happen through walking (M11 columns). If it happens anyway (setup error,
+  later side-swap), facing stays locked until the attack ends or the
+  character lands, then turns on that first unlocked tick (M8). Walk input
+  during the lock is irrelevant (not actionable, M4).
 - **EC-M13. Integer range.** `|x| ≤ 50,000`, speeds ≤ 2,000, products below
   `10^9`; no overflow path (sim-core F11).
 
@@ -492,8 +504,12 @@ Fixtures set `tick ≥ 1`, Arena walls ±50,000, `PUSH_HW = 2,500` unless stated
   THEN x = 47,500; no tick ever ends outside `[−47,500, 47,500]`.
 - **AC-M7** (U; M14, F5) GIVEN the F5 example, WHEN 1 tick runs, THEN
   x_a = −47,500 and x_b = −42,500.
-- **AC-M8** (U; M8, EC-M12) GIVEN dx = −1, 0, +1, WHEN facing is evaluated,
-  THEN facing = −1, unchanged, +1.
+- **AC-M8** (U; M8, EC-M12) GIVEN dx = −1, 0, +1 and facing unlocked, WHEN
+  facing is evaluated, THEN facing = −1, unchanged, +1.
+- **AC-M8b** (U; M8, EC-M14) GIVEN P0 with facing +1, the opponent placed at
+  dx < 0, and P0 attacking (or `mstate = AIR`), WHEN a tick runs, THEN facing
+  stays +1; WHEN the lock clears, THEN facing becomes −1 on that tick. Both
+  lock conditions are set directly in the fixture until Attack and jump exist.
 - **AC-M9** (U; M4) GIVEN hit-stop 3 on P0 and RIGHT held, WHEN 3 ticks run,
   THEN P0's x is unchanged; on the 4th tick it moves 340.
 - **AC-M10** (U; M1, sim-core rule 5) GIVEN a normal tick, WHEN the movement
@@ -526,9 +542,9 @@ Fixtures set `tick ≥ 1`, Arena walls ±50,000, `PUSH_HW = 2,500` unless stated
 
 | # | Question | Owner | Target |
 |---|---|---|---|
-| OQ-M1 | No cross-ups (pushboxes as columns) — confirm | user | Before Tier 0 Air attacks |
-| OQ-M2 | Dash excluded from Tier 0 — confirm | user | Before Combat GDD |
-| OQ-M3 | Max distance 6 m on a 10 m stage — camera framing check | user + Presentation | Arena / camera spike |
+| OQ-M1 | ~~No cross-ups — confirm~~ **Decided 2026-11-10 (user):** no cross-ups | — | Done |
+| OQ-M2 | ~~Dash excluded from Tier 0 — confirm~~ **Decided 2026-11-10 (user):** no dash | — | Done |
+| OQ-M3 | Max distance 6 m decided 2026-11-10 (user); camera framing still to be checked | Presentation | Arena / camera spike |
 | OQ-M4 | Derived-state composition instead of one shared state word (M10) — needs Attack, Hit, Defense to expose the flags it reads | Attack / Hit / Defense GDDs | When written |
 | OQ-M5 | Input direction bit positions | Input GDD | Before Tier −1 implementation |
 | OQ-M6 | Round reset via request in Round's region, applied by Movement (M9) | Round & Match GDD | When written |
