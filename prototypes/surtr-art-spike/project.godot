@@ -1,0 +1,14 @@
+config_version=5
+
+[application]
+config/name="Surtr — Tier −1 Art Spike"
+run/main_scene="res://preview.tscn"
+
+[display]
+window/size/viewport_width=850
+window/size/viewport_height=650
+window/stretch/mode="canvas_items"
+
+[rendering]
+renderer/rendering_method="gl_compatibility"
+environment/defaults/default_clear_color=Color(0.18, 0.17, 0.19, 1)

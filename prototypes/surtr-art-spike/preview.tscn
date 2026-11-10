@@ -1,0 +1,51 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://preview.gd" id="1"]
+[ext_resource type="PackedScene" path="res://assets/art/characters/surtr/char_surtr.glb" id="2"]
+
+[sub_resource type="StandardMaterial3D" id="GroundMat"]
+albedo_color = Color(0.36, 0.33, 0.35, 1)
+roughness = 1.0
+
+[sub_resource type="PlaneMesh" id="Ground"]
+material = SubResource("GroundMat")
+size = Vector2(200, 200)
+
+[sub_resource type="Environment" id="Studio"]
+background_mode = 1
+background_color = Color(0.34, 0.32, 0.35, 1)
+ambient_light_source = 2
+ambient_light_color = Color(1, 0.91, 0.88, 1)
+ambient_light_energy = 0.58
+
+[node name="SurtrStudy" type="Node3D"]
+script = ExtResource("1")
+
+[node name="Surtr" parent="." instance=ExtResource("2")]
+
+[node name="Studio" type="WorldEnvironment" parent="."]
+environment = SubResource("Studio")
+
+[node name="Floor" type="MeshInstance3D" parent="."]
+position = Vector3(0,-0.025,0)
+mesh = SubResource("Ground")
+
+[node name="Key" type="DirectionalLight3D" parent="."]
+rotation_degrees = Vector3(-48,-30,0)
+light_energy = 1.15
+shadow_enabled = true
+
+[node name="Rim" type="DirectionalLight3D" parent="."]
+rotation_degrees = Vector3(-36,145,0)
+light_energy = 0.65
+
+[node name="Camera" type="Camera3D" parent="."]
+position = Vector3(0.98,1.03,3.7)
+projection = 1
+size = 1.68
+current = true
+
+[node name="Controls" type="Label" parent="."]
+offset_left = 20.0
+offset_top = 18.0
+text = "1  Idle       2  Walk       3  Light attack"
