@@ -1,0 +1,75 @@
+class_name SimLayout
+## Fixed layout of the single sim state buffer (sim-core rules 2-6a, F3, F4, F10).
+## `const int`s only. Changing ANY constant requires bumping LAYOUT_VERSION and the
+## golden fingerprint in tests/unit/sim_core/sim_core_layout_test.gd (rule 3).
+## Sizes other than the two headers and the event ring are F3 estimates until each
+## owning GDD fixes its fields. Snapshots are `buffer.duplicate()`: assignment aliases (ADR-0001 R7).
+
+const LAYOUT_VERSION: int = 1
+## Hard word limit (user decision 2026-11-09).
+const SIM_BUFFER_WORD_BUDGET: int = 2_048
+
+# --- Sim Core header (8 words, rule 6): absolute indices ---
+const HDR_BASE: int = 0
+const HDR_SIZE: int = 8
+const H_TICK: int = 0
+const H_FREEZE_TICKS: int = 1
+const H_RNG_S0: int = 2
+const H_RNG_S1: int = 3
+const H_LAYOUT_VERSION: int = 4
+
+# --- Event Control (8 words, rule 6a), written only by SimEvents ---
+const EVC_BASE: int = 8
+const EVC_SIZE: int = 8
+const EC_EVENT_SEQ: int = 8
+const EC_OBS_THIS_TICK: int = 9
+const EC_CRIT_THIS_TICK: int = 10
+const EC_EVENT_OVERFLOW_COUNT: int = 11
+const EC_CRITICAL_OVERFLOW_COUNT: int = 12
+const EC_SIM_FAULT: int = 13
+
+# --- Per-player blocks (rule 5): b[P_BASE + p * P_STRIDE + PF_*] ---
+const P_BASE: int = 16
+const P_COUNT: int = 2
+const P_STRIDE: int = 64
+const PF_PREV_X: int = 0
+const PF_PREV_Y: int = 1
+const PF_SNAP: int = 2
+
+# --- Input history ring (F10): b[IN_BASE + p * INPUT_RING_TICKS + posmod(tick, INPUT_RING_TICKS)] ---
+const IN_BASE: int = 144
+const INPUT_RING_TICKS: int = 32
+
+# --- Projectile pool (F3 estimate) ---
+const PROJ_BASE: int = 208
+const PROJ_CAP: int = 4
+const PROJ_STRIDE: int = 16
+
+# --- Hit-event buffer: (P_COUNT + PROJ_CAP) records ---
+const HIT_BASE: int = 272
+const HIT_CAP: int = 6
+const HIT_STRIDE: int = 8
+
+# --- Opponent AI (includes its own 2 PRNG words) ---
+const AI_BASE: int = 320
+const AI_SIZE: int = 32
+
+# --- Round & Match ---
+const ROUND_BASE: int = 352
+const ROUND_SIZE: int = 16
+
+# --- Arena ---
+const ARENA_BASE: int = 368
+const ARENA_SIZE: int = 8
+
+# --- Presentation event ring (rule 18, F4) ---
+const EV_BASE: int = 376
+const EVENT_WORDS: int = 6
+const MAX_EVENTS_PER_TICK: int = 16
+const OBS_CAP: int = 7
+const CATCHUP_RESERVE: int = 4
+const ROLLBACK_WINDOW_TICKS: int = 8
+const EVENT_RING_ENTRIES: int = 208
+
+## End of the last region; the buffer is sized to exactly this once, at init.
+const TOTAL: int = 1_624
