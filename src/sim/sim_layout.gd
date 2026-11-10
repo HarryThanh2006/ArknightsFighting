@@ -5,7 +5,7 @@ class_name SimLayout
 ## Sizes other than the two headers and the event ring are F3 estimates until each
 ## owning GDD fixes its fields. Snapshots are `buffer.duplicate()`: assignment aliases (ADR-0001 R7).
 
-const LAYOUT_VERSION: int = 2
+const LAYOUT_VERSION: int = 3
 ## Hard word limit (user decision 2026-11-09).
 const SIM_BUFFER_WORD_BUDGET: int = 2_048
 
@@ -35,9 +35,20 @@ const P_STRIDE: int = 64
 const PF_PREV_X: int = 0
 const PF_PREV_Y: int = 1
 const PF_SNAP: int = 2
-## PLACEHOLDER until the Movement GDD places its fields (from offset 3): position in su.
+# Movement fields (character-movement.md M1), offsets 3-15.
 const PF_X: int = 3
 const PF_Y: int = 4
+const PF_VX: int = 5
+const PF_VY: int = 6
+const PF_FACING: int = 7
+const PF_MSTATE: int = 8
+const PF_MSTATE_TICKS: int = 9
+const PF_KB_SPEED: int = 10
+const PF_KB_DIR: int = 11
+## PLACEHOLDER until the Attack GDD places its fields: non-zero = an active move (Movement M8, M10).
+const PF_ATK_ACTIVE: int = 16
+## PLACEHOLDER until the Hit Detection GDD places its fields: hit-stop ticks left (Movement M4).
+const PF_HITSTOP: int = 17
 
 # --- Input history ring (F10): b[IN_BASE + p * INPUT_RING_TICKS + posmod(tick, INPUT_RING_TICKS)] ---
 const IN_BASE: int = 144
@@ -66,6 +77,9 @@ const R_MATCH_OVER: int = 352
 # --- Arena ---
 const ARENA_BASE: int = 368
 const ARENA_SIZE: int = 8
+## Wall positions in su, written at init (Arena; PLACEHOLDER init until the Arena GDD).
+const A_WALL_L: int = 368
+const A_WALL_R: int = 369
 
 # --- Presentation event ring (rule 18, F4) ---
 const EV_BASE: int = 376

@@ -81,3 +81,23 @@ ticks, p99.9 is the 100th-slowest tick, so it is sensitive to OS activity. Befor
 a real V5 verdict, the measurement procedure should fix the conditions (idle
 machine, several runs, report the median run) — or the gate should say how many
 runs and which run is judged.
+
+## Addendum — after Tier −1 Movement (same day)
+
+Movement's Tier −1 subset (walk, facing, pushbox separation, walls, corner
+push-out) replaced the placeholder movement slot (`LAYOUT_VERSION` 3). Five
+Release runs, same machine and procedure; still a **FLOOR** (attack, hit,
+defense, events and round slots are empty), not a V5 pass.
+
+| Run | Mean | p50 | p99 | p99.9 | Max (not gating) |
+|---|---|---|---|---|---|
+| 11 | 19.79 | 19 | 33 | 72 | 776 |
+| 12 | 19.21 | 19 | 28 | 59 | 367 |
+| 13 | 19.85 | 19 | 33 | 108 | 993 |
+| 14 | 19.30 | 19 | 29 | 78 | 3,799 |
+| 15 | 19.40 | 19 | 27 | 52 | 821 |
+| **Median** | **19.40** | **19** | **29** | **72** | 821 |
+
+All five runs are inside the AC-V3 gate (mean, p99, p99.9 ≤ 250 µs). Movement's
+cost is below the run-to-run noise of the earlier floor runs (~18–20 µs mean);
+the per-tick checksum over 1,624 words still dominates.

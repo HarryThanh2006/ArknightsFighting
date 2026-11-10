@@ -86,8 +86,8 @@ func test_injected_clock_drives_process() -> void:
 
 func test_view_reads_sim_ints_after_stepping() -> void:
 	var r := _runner()
-	r.input_sampler = func(p: int) -> int: return SimPipeline.INPUT_RIGHT if p == 0 else 0
+	r.input_sampler = func(p: int) -> int: return Movement.INPUT_RIGHT if p == 0 else 0
 	r.advance(50_000)
 	assert_int(r.view.tick()).is_equal(3)
-	assert_int(r.view.pos_x_su(0)).is_equal(-SimPipeline.PLACEHOLDER_START_X_SU + 3 * SimPipeline.PLACEHOLDER_WALK_SU)
-	assert_int(r.view.prev_pos_x_su(0)).is_equal(r.view.pos_x_su(0) - SimPipeline.PLACEHOLDER_WALK_SU)
+	assert_int(r.view.pos_x_su(0)).is_equal(-Movement.START_X_SU + 3 * Movement.WALK_FWD_SU)
+	assert_int(r.view.prev_pos_x_su(0)).is_equal(r.view.pos_x_su(0) - Movement.WALK_FWD_SU)

@@ -41,9 +41,9 @@ func _sample_input(player: int) -> int:
 	var right: Key = KEY_D if player == 0 else KEY_RIGHT
 	var w: int = 0
 	if Input.is_physical_key_pressed(left):
-		w |= SimPipeline.INPUT_LEFT
+		w |= Movement.INPUT_LEFT
 	if Input.is_physical_key_pressed(right):
-		w |= SimPipeline.INPUT_RIGHT
+		w |= Movement.INPUT_RIGHT
 	return w
 
 

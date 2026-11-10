@@ -6,8 +6,8 @@ extends GdUnitTestSuite
 const SEED: int = 12345
 const P1_X: int = SimLayout.P_BASE + SimLayout.P_STRIDE + SimLayout.PF_X
 const P0_BASE: int = SimLayout.P_BASE
-const RIGHT: int = SimPipeline.INPUT_RIGHT
-const LEFT: int = SimPipeline.INPUT_LEFT
+const RIGHT: int = Movement.INPUT_RIGHT
+const LEFT: int = Movement.INPUT_LEFT
 
 
 func _new_sim() -> Sim:
@@ -36,9 +36,10 @@ func test_init_zeroes_all_but_version_and_rng_and_returns_checksum() -> void:
 	assert_int(s.buffer[SimLayout.H_LAYOUT_VERSION]).is_equal(SimLayout.LAYOUT_VERSION)
 	assert_int(s.buffer[SimLayout.H_TICK]).is_equal(0)
 	assert_int(c0).is_equal(SimHash.hash_words(s.buffer))
-	# PLACEHOLDER movement init also writes both start positions.
+	# Movement init writes start positions and facing; PLACEHOLDER Arena init writes the walls.
 	var allowed: Array[int] = [SimLayout.H_LAYOUT_VERSION, SimLayout.H_RNG_S0, SimLayout.H_RNG_S1,
-		P0_BASE + SimLayout.PF_X, P1_X]
+		P0_BASE + SimLayout.PF_X, P1_X, P0_BASE + SimLayout.PF_FACING,
+		SimLayout.P_BASE + SimLayout.P_STRIDE + SimLayout.PF_FACING, SimLayout.A_WALL_L, SimLayout.A_WALL_R]
 	for i: int in SimLayout.TOTAL:
 		if not allowed.has(i):
 			assert_int(s.buffer[i]).override_failure_message("word %d" % i).is_equal(0)
@@ -64,7 +65,7 @@ func test_block_a_copies_prev_clears_snap_and_writes_input_ring() -> void:
 	s.buffer[P0_BASE + SimLayout.PF_SNAP] = 1
 	s.step(0, 0)  # tick 2
 	assert_int(s.buffer[SimLayout.H_TICK]).is_equal(2)
-	assert_int(s.buffer[P0_BASE + SimLayout.PF_PREV_X]).is_equal(-SimPipeline.PLACEHOLDER_START_X_SU + SimPipeline.PLACEHOLDER_WALK_SU)
+	assert_int(s.buffer[P0_BASE + SimLayout.PF_PREV_X]).is_equal(-Movement.START_X_SU + Movement.WALK_FWD_SU)
 	assert_int(s.buffer[P0_BASE + SimLayout.PF_SNAP]).is_equal(0)
 	assert_int(s.buffer[SimLayout.IN_BASE + 1]).is_equal(RIGHT)  # tick 1, p0, slot 1
 	assert_int(s.buffer[SimLayout.IN_BASE + 32 + 1]).is_equal(LEFT)  # tick 1, p1
@@ -102,7 +103,7 @@ func test_freeze_of_three_skips_exactly_three_block_b_ticks() -> void:
 		s.step(RIGHT, 0)
 	assert_int(s.buffer[P0_BASE + SimLayout.PF_X]).is_equal(x0)
 	s.step(RIGHT, 0)
-	assert_int(s.buffer[P0_BASE + SimLayout.PF_X]).is_equal(x0 + SimPipeline.PLACEHOLDER_WALK_SU)
+	assert_int(s.buffer[P0_BASE + SimLayout.PF_X]).is_equal(x0 + Movement.WALK_FWD_SU)
 
 
 # --- AC-T2: Ended sim changes nothing ---

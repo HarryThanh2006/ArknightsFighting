@@ -69,4 +69,4 @@ static func run() -> String:
 ## Scripted input: P0 alternates right / left every 30 ticks, P1 every 45.
 static func _w(t: int, p: int) -> int:
 	var period: int = 30 if p == 0 else 45
-	return SimPipeline.INPUT_RIGHT if posmod(t, 2 * period) < period else SimPipeline.INPUT_LEFT
+	return Movement.INPUT_RIGHT if posmod(t, 2 * period) < period else Movement.INPUT_LEFT

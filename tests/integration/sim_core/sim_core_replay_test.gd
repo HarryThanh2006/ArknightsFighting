@@ -33,7 +33,7 @@ func test_rerecording_the_fixture_inputs_gives_identical_checksums() -> void:
 func test_one_changed_input_word_is_detected_at_its_tick() -> void:
 	var r := _load()
 	var t: int = 2500
-	r.words[2 * (t - 1)] ^= SimPipeline.INPUT_RIGHT | SimPipeline.INPUT_LEFT
+	r.words[2 * (t - 1)] ^= Movement.INPUT_RIGHT | Movement.INPUT_LEFT
 	assert_int(r.first_mismatch()).is_equal(t)
 
 
