@@ -16,6 +16,13 @@ var _hud := Label.new()
 var _runner: MatchRunner
 var _boxes: Array[ColorRect] = []
 var _feedback := PlaceholderEventFeedback.new()
+## Art spike (design/art/sprite-spec-2d.md): F2 boxes <-> sprites, F4 hurt/hit box overlay.
+const SPRITE_DIR: String = "res://assets/characters/guard_blockout"
+const SPRITE_CHAR: String = "guard_blockout"
+var sprite_mode: bool = false
+var box_overlay: bool = false
+var _sprites: Array[CharacterSprite] = []
+var _overlay := Node2D.new()
 
 
 func _ready() -> void:
@@ -41,6 +48,16 @@ func _ready() -> void:
 		box.size = BOX_SIZE
 		add_child(box)
 		_boxes.append(box)
+	for p: int in 2:
+		var spr := CharacterSprite.new()
+		spr.player = p
+		if not spr.load_character(SPRITE_DIR, SPRITE_CHAR):
+			break
+		add_child(spr)
+		_sprites.append(spr)
+	sprite_mode = OS.get_cmdline_user_args().has("--sprites") and _sprites.size() == 2
+	_overlay.draw.connect(_draw_overlay)
+	add_child(_overlay)
 	_runner.views.append(self)
 	# PLACEHOLDER event-driven feedback (flash, shake, SFX, banners).
 	_feedback.su_to_px = func(x_su: int, y_su: int) -> Vector2:
@@ -77,7 +94,8 @@ func update_view(view: SimView, alpha: float) -> void:
 		status = "P%d wins the match   [R] Rematch" % view.result()
 	elif view.interval():
 		status = "Draw - replay round" if view.result() == 0 else "P%d wins round" % view.result()
-	_hud.text = "%s     P1 %d HP  %s     P2 %d HP  %s     Score %d - %d\nP1  A/D   F Light   G Heavy   H Block       P2  Arrows   , Light   . Heavy   / Block" % [
+	_hud.text = "%s     P1 %d HP  %s     P2 %d HP  %s     Score %d - %d\nP1  A/D   F Light   G Heavy   H Block       P2  Arrows   , Light   . Heavy   / Block
+F2 boxes / sprites (PLACEHOLDER blockout)   F4 hurt / hit box overlay" % [
 		status, view.hp(0), view.stance(0), view.hp(1), view.stance(1), view.wins(0), view.wins(1)]
 	for p: int in _boxes.size():
 		var x_su: float = float(view.pos_x_su(p))
@@ -88,28 +106,48 @@ func update_view(view: SimView, alpha: float) -> void:
 		var m := Vector2(x_su, y_su) / float(SimMath.SU_PER_METER)
 		_boxes[p].position = Vector2(CENTRE_X_PX + m.x * PX_PER_M - BOX_SIZE.x * 0.5,
 			FLOOR_Y_PX - m.y * PX_PER_M - BOX_SIZE.y)
-	queue_redraw()
+		_boxes[p].visible = not sprite_mode
+		if p < _sprites.size():
+			_sprites[p].visible = sprite_mode
+			_sprites[p].update_from(view, Vector2(CENTRE_X_PX + m.x * PX_PER_M, FLOOR_Y_PX - m.y * PX_PER_M), PX_PER_M)
+	_overlay.queue_redraw()
 
 func _unhandled_key_input(event: InputEvent) -> void:
 	var key := event as InputEventKey
+	if key != null and key.pressed and not key.echo and key.physical_keycode == KEY_F2 and _sprites.size() == 2:
+		sprite_mode = not sprite_mode
+	if key != null and key.pressed and not key.echo and key.physical_keycode == KEY_F4:
+		box_overlay = not box_overlay
 	if key != null and key.pressed and not key.echo and key.physical_keycode == KEY_R:
 		if _runner != null and _runner.view != null and _runner.view.ended():
 			_feedback.reset()
 			_runner.start_match(MATCH_SEED, Time.get_ticks_usec())
 
-## Draw active strike boxes in the same facing-local coordinates as contact tests.
-func _draw() -> void:
+## Box draw on the overlay node (above boxes and sprites), in the same facing-local
+## coordinates as contact tests: filled strike boxes in box mode; with F4, hurtbox
+## (green) and hitbox (gold) outlines in either mode.
+func _draw_overlay() -> void:
 	if _runner == null or _runner.view == null:
 		return
 	var view: SimView = _runner.view
-	var scale_su: float = PX_PER_M / float(SimMath.SU_PER_METER)
 	for p: int in _boxes.size():
-		for box: Array in view.hitboxes(p):
-			var x: int = box[0]
-			var y: int = box[1]
-			var hw: int = box[2]
-			var hh: int = box[3]
-			var feet := _boxes[p].position + Vector2(BOX_SIZE.x * 0.5, BOX_SIZE.y)
-			var centre := feet + Vector2(view.facing(p) * x, -y) * scale_su
-			var extent := Vector2(hw, hh) * scale_su
-			draw_rect(Rect2(centre - extent, extent * 2.0), Color.GOLD)
+		var feet := _boxes[p].position + Vector2(BOX_SIZE.x * 0.5, BOX_SIZE.y)
+		if not sprite_mode:
+			for box: Array in view.hitboxes(p):
+				_overlay.draw_rect(_box_rect(view, p, feet, box), Color.GOLD)
+		if box_overlay:
+			for box: Array in view.hurtboxes(p):
+				_overlay.draw_rect(_box_rect(view, p, feet, box), Color(0.25, 0.85, 0.35), false, 2.0)
+			for box: Array in view.hitboxes(p):
+				_overlay.draw_rect(_box_rect(view, p, feet, box), Color.GOLD, false, 2.0)
+
+
+func _box_rect(view: SimView, p: int, feet: Vector2, box: Array) -> Rect2:
+	var scale_su: float = PX_PER_M / float(SimMath.SU_PER_METER)
+	var x: int = box[0]
+	var y: int = box[1]
+	var hw: int = box[2]
+	var hh: int = box[3]
+	var centre := feet + Vector2(view.facing(p) * x, -y) * scale_su
+	var extent := Vector2(hw, hh) * scale_su
+	return Rect2(centre - extent, extent * 2.0)

@@ -96,3 +96,24 @@ func hitboxes(p: int) -> Array:
 ## Read between steps only; the caller keeps the cursor outside the sim.
 func events_since(next_seq: int, out: PackedInt64Array) -> PackedInt64Array:
 	return SimEvents.read(_sim.buffer, next_seq, out)
+
+## Sprite-driver values (design/art/sprite-spec-2d.md §4). Read only.
+func hitstun(p: int) -> int:
+	return _sim.buffer[SimLayout.P_BASE + p * SimLayout.P_STRIDE + SimLayout.PF_HITSTUN]
+
+func blockstun(p: int) -> int:
+	return _sim.buffer[SimLayout.P_BASE + p * SimLayout.P_STRIDE + SimLayout.PF_BLOCKSTUN]
+
+func guarding(p: int) -> bool:
+	return _sim.buffer[SimLayout.P_BASE + p * SimLayout.P_STRIDE + SimLayout.PF_BLOCKING] != 0
+
+func walking(p: int) -> bool:
+	return _sim.buffer[SimLayout.P_BASE + p * SimLayout.P_STRIDE + SimLayout.PF_VX] != 0
+
+## Movement-state tick counter: frozen during hit-stop and between rounds.
+func state_ticks(p: int) -> int:
+	return _sim.buffer[SimLayout.P_BASE + p * SimLayout.P_STRIDE + SimLayout.PF_MSTATE_TICKS]
+
+## Immutable facing-local hurtboxes for this exact simulation frame.
+func hurtboxes(p: int) -> Array:
+	return _sim.data.boxes(move_id(p), move_frame(p), "hurtboxes")
