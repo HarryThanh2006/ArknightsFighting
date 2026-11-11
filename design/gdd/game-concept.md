@@ -435,6 +435,12 @@ hình chỉ huy; các phân cảnh hành động anime (cut-in, speed line) dùn
   có retrospective.
 
 ### Open Questions
+- **Surtr thay Ch'en hay là nhân vật thứ ba của Tier 0?** *(Quyết định 2026-11-11, user:
+  nhân vật đầu tiên được vẽ và dựng là **Surtr**, vẽ tay bằng Krita, thiết kế gốc theo
+  art bible §8.11 / §9.)* Concept chưa nói Surtr **thay** Ch'en (Guard, Offensive SP,
+  cận chiến) hay **thêm vào** roster Tier 0 (Ch'en + Amiya). **Đề xuất: thay Ch'en** —
+  giữ Tier 0 ở 2 nhân vật; thêm người thứ ba phá luật "không mở rộng roster trước gate
+  Combat Slice". Roster ở các mục khác chưa sửa cho tới khi user chọn.
 - **Float có kiểm soát hay fixed-point?** → đã chọn fixed-point số nguyên (ADR-0001, Proposed).
 - ~~**Model khối cứng hay skinned mesh?**~~ → không còn áp dụng: game chuyển sang 2D sprite
   (2026-11-10). Câu hỏi mới: độ phân giải sprite và số khung mỗi đòn → spike art 2D.
