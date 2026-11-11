@@ -182,3 +182,28 @@ three runs of identical code, so yesterday's single 263 µs run is within this
 machine's run-to-run tail noise, not a code regression. The cheapest lever, if
 the budget gets tight, is the checksum (e.g. a native hash over the packed
 bytes instead of a GDScript loop) — a design change that needs the user's OK.
+
+## Addendum 2026-11-11 — layout 6, SimEvents in the pipeline
+
+Code: `de9339f` + `c25a710` (layout 6: HIT/BLOCK/KO/ROUND_*/MATCH_END
+emitted into the in-buffer ring). TOTAL still 1,624 words. Same inputs and
+counts as layout 5 (425 hits, 27 blocks, 11,314 hit-stop ticks, 29 KOs, 11
+matches) on all five runs. Release export, Intel Core i7-13620H.
+
+| Build | Run | Mean | p50 | p99 | p99.9 | Max (not gating) | `MEMORY_STATIC` Δ |
+|---|---|---|---|---|---|---|---|
+| Release | 26 | 25.32 | 24 | 63 | 165 | 517 | 0 |
+| Release | 27 | 26.00 | 24 | 67 | 159 | 2,611 | 0 |
+| Release | 28 | 26.49 | 24 | 82 | 244 | 1,790 | 0 |
+| Release | 29 | 25.96 | 24 | 72 | 178 | 786 | 0 |
+| Release | 30 | 26.12 | 25 | 65 | 152 | 859 | 0 |
+| **Release median** | | **26.00** | **24** | **67** | **165** | 859 | 0 |
+
+All five runs are inside the AC-V3 gate (≤ 250 µs); run 28's p99.9 (244 µs)
+is the closest. Per-slot means (median of the five runs, µs; before → after
+SimEvents, same tool): resolve 5.31 → 6.52 (contact point + HIT/BLOCK
+emission; its p99 rose 12 → 22), round_check 1.01 → 1.41 (KO flags +
+ROUND_* emission), block_a 1.35 → 1.46, checksum 29.67 → 29.59, every other
+slot unchanged within noise. Events cost ≈ 1.7 µs per tick; the checksum is
+still ~55 % of slot time. Projectiles and SP are still missing: partial
+floor, not a V5 pass.

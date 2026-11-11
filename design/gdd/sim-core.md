@@ -1807,77 +1807,89 @@ pass.
 
 ### Events (rules 18–19, F4–F7, EC-5, EC-15, EC-18, EC-19, EC-22)
 
+*Implemented 2026-11-11 (`src/sim/sim_events.gd`, layout 6). Differences from
+this GDD: (1) the "debug assert" of 18d is a Debug-build `push_error`, so
+gdUnit4 can exercise the paths (AC-V5a open); (2) type IDs are 0 `NONE`,
+1 `HIT`, 2 `BLOCK`, 3 `THROW_CONNECT`, 4 `ULTIMATE_ACTIVATE`, 5 `ULTIMATE_HIT`,
+6 `KO`, 7 `ROUND_END`, 8 `ROUND_START`, 9 `MATCH_END`, 10 `PROJECTILE_HIT`,
+11 `PROJECTILE_BLOCK` (only 1, 2, 6–9 are emitted); (3) payloads: `HIT` /
+`BLOCK` a0 = attacker + 2 × move, a1 = damage applied, a2 = contact x (su;
+no contact y, three arguments only); `KO` a0 = player; `ROUND_END` a0 =
+result, a1 = reason (0 KO, 1 timeout), a2 = round; `ROUND_START` a0 = round;
+`MATCH_END` a0 = winner, a1/a2 = wins; (4) `ROUND_START` comes from the
+round-check slot (end of block B) on each round's first live tick.*
+
 - **AC-E1** (U; F4, EC-1, EC-2) GIVEN a sim at tick ≥ 1, WHEN 13 ticks each
   accept 16 events (208 total), THEN a read from cursor 0 returns seq 0–207
   with `lost = 0`; WHEN one more event is accepted on the next tick, THEN the
-  read returns seq 1–208 with `lost = 1`.
+  read returns seq 1–208 with `lost = 1`. **PASS (2026-11-11)** — `test_ring_holds_208_then_wraps_with_lost_one`.
 - **AC-E2** (U; F6, EC-3, EC-4) GIVEN a consumer that has just read and an
   emitter accepting 16 events per tick, WHEN it reads after 13 steps, THEN
   `lost = 0`; WHEN after 14 steps, THEN `lost = 16` and the first returned
-  seq is E0 + 16.
+  seq is E0 + 16. **PASS (2026-11-11)** — `test_drain_bound_13_steps_lossless_14_lose_16`.
 - **AC-E3** (U; F5, EC-6) GIVEN one tick emitting 10 observation and 2
   critical events, WHEN accepted, THEN 7 observation and 2 critical records
   are written, `event_overflow_count += 3`, `sim_fault` unchanged, and no
-  assert fires.
+  assert fires. **PASS (2026-11-11)** — `test_observation_cap_drops_and_counts_without_fault`.
 - **AC-E4** (U; F5, EC-7) GIVEN `obs_this_tick = 7`, `crit_this_tick = 9`,
   WHEN a 10th critical event is emitted, THEN nothing is written,
   `event_overflow_count` and `critical_overflow_count` each +1,
-  `sim_fault = 1`, and `match_over` unchanged.
+  `sim_fault = 1`, and `match_over` unchanged. **PASS (2026-11-11)** for the state checks — `test_critical_overflow_counts_and_faults`. The Debug assert is a `push_error` (AC-V5a still open).
 - **AC-E5** (U; F5, EC-8) GIVEN interleavings of ≤ 9 critical and ≤ 17
   observation emits in one tick — 200 drawn from a committed-seed local
   generator plus the extremes "all critical first" and "all critical last" —
   WHEN accepted, THEN the accepted set equals the test oracle's "first 7
-  observations in emission order plus every critical event".
+  observations in emission order plus every critical event". **PASS (2026-11-11)** — 200 seeded interleavings + both extremes.
 - **AC-E6** (U; rules 18a, 18d, EC-20, EC-21) GIVEN emits of type 0, −1 and
   `EVENT_TYPE_COUNT`, and an emit while `tick == 0`, WHEN each runs, THEN no
   ring word and no `event_seq` changes, both overflow counters are
   unchanged, `sim_fault == 1`, and `EVENT_CLASS` is never indexed out of
-  range; repeating the invalid emit leaves the same state.
+  range; repeating the invalid emit leaves the same state. **PASS (2026-11-11)** — `test_invalid_emission_rejected_and_sets_fault` (Debug diagnostic is `push_error`).
 - **AC-E7** (U; F5 sequence semantics) GIVEN 3 ticks each emitting 20
   observation + 2 critical events (9 accepted, 13 dropped per tick), then
   further ticks of at most 7 observation and 9 critical events until
   `event_seq == 250`, WHEN read from cursor 0, THEN the returned seqs are
-  42 … 249 with no gaps, `lost == 42` and `event_overflow_count == 39`.
+  42 … 249 with no gaps, `lost == 42` and `event_overflow_count == 39`. **PASS (2026-11-11)** — `test_sequence_semantics_drops_no_gaps_wrap_reports_lost`.
 - **AC-E19** (U; 18c, CD-GDD-ALIGN concern 1) GIVEN a saturated tick in which
   7 observation events are emitted before hit resolution (1 throw tech, 2
   projectile spawns, 4 projectile expiries) and then both players' strikes
   connect, WHEN the tick resolves, THEN both character `HIT` records are
   accepted, every later observation event that tick is dropped and counted,
-  and `critical_overflow_count == 0`.
+  and `critical_overflow_count == 0`. **PASS (2026-11-11)** with direct emits (throw tech and projectiles do not exist yet) — `test_saturated_observations_never_block_character_hits`.
 - **AC-E8** (U; rule 18f, EC-17) GIVEN a consumer with `next_seq = 500` and a
   restore that sets `event_seq = 300`, WHEN the consumer reads in a live mode,
   THEN the rewind is detected (Debug assert) and the consumer resyncs with
-  `next_seq = 300`.
+  `next_seq = 300`. **NOT RUN** — no live restore exists yet; the placeholder consumer resyncs on rewind but has no test.
 - **AC-E9** (U; rule 18f) GIVEN a read, WHEN `events_since` returns, THEN
-  writing to `out` leaves every ring word unchanged.
+  writing to `out` leaves every ring word unchanged. **PASS (2026-11-11)** — `test_read_copies_by_value`.
 - **AC-E10** (I; rule 19) GIVEN hit records from tick T, WHEN tick T + 1's
   hit resolution starts, THEN the hit-event buffer is cleared before new
   records are written, and no presentation-ring word changes in the clear.
-  *(Depends on the Hit Detection GDD.)*
+  *(Depends on the Hit Detection GDD.)* **NOT RUN** — hit records are overwritten each tick, but no test isolates the clear.
 - **AC-E11** (U; F7, F11) GIVEN `event_seq = INT64_MAX − 1000` set directly,
   WHEN 16 events are accepted, THEN each slot follows `posmod(seq, 208)` with
-  no negative index. *(Boundary only; unreachable in play, F7.)*
+  no negative index. *(Boundary only; unreachable in play, F7.)* **PASS (2026-11-11)** — `test_seq_near_int64_max_uses_posmod_slots`.
 - **AC-E12** (U; rule 18) GIVEN tick 5, WHEN `emit(b, T, 3, 4, 5)` is accepted
-  with seq s, THEN its slot holds exactly `(5, s, T, 3, 4, 5)`.
+  with seq s, THEN its slot holds exactly `(5, s, T, 3, 4, 5)`. **PASS (2026-11-11)** — `test_emit_writes_exact_record_and_nothing_else`.
 - **AC-E13** (U; EC-5, EC-19, F6) GIVEN `event_seq` of 0, 1 and 207 after a
   fresh `init`, WHEN read from cursor 0, THEN `lost == 0` and exactly
-  `event_seq` records are returned (none for 0).
+  `event_seq` records are returned (none for 0). **PARTIAL (2026-11-11)** — `event_seq` 0 and 208 checked; 1 and 207 not separately.
 - **AC-E14** (U; EC-22) GIVEN an event with `a0 = 7`, `a1 = −1`, WHEN emitted,
-  THEN the record stores the values as given and no other word changes.
+  THEN the record stores the values as given and no other word changes. **PASS (2026-11-11)** — same test as AC-E12 (`a0 = 7`, `a1 = −1`).
 - **AC-E15** (U; 18e, EC-15) GIVEN snapshot S with counters
   (`event_overflow_count`, `critical_overflow_count`, `sim_fault`) = (c, k, 0),
   WHEN a critical overflow is forced, THEN they rise; WHEN S is restored,
   THEN they equal (c, k, 0); WHEN re-stepped with the same inputs, THEN the
   counters and checksums match the first run; WHEN `init` runs, THEN all
-  three are 0.
+  three are 0. **PASS (2026-11-11)** with c = k = 0 — `test_fault_counters_follow_snapshot_restore_and_init`.
 - **AC-E16** (C; 18e) GIVEN `src/sim/`, WHEN CI runs, THEN no code writes
-  `sim_fault = 0` or decrements either overflow counter outside `init`.
+  `sim_fault = 0` or decrements either overflow counter outside `init`. **NOT RUN** — no CI grep yet (code review: no such write exists).
 - **AC-E17** (U; EC-18) GIVEN a consumer in seek mode with `lost = 500`, and
   separately after a rewind, WHEN it reads, THEN no assert fires and
-  `next_seq == event_seq`.
+  `next_seq == event_seq`. **BLOCKED (no seek / training reset mode yet)**.
 - **AC-E18** (C; 18a) GIVEN `src/sim/`, WHEN CI runs, THEN the event-ring and
   Event Control layout constants are referenced only by `SimEvents` and
-  `SimView`.
+  `SimView`. **NOT RUN** — no CI grep yet (code review: only `SimEvents` and the layout test reference them; block A calls `SimEvents.begin_tick`).
 
 ### Lifecycle (rules 20–23, 18e, 18g)
 
@@ -1902,9 +1914,10 @@ pass.
   *(Amended 2026-11-10, user decision: the clause "and the sim test suite
   yields identical buffers on both builds" is dropped — the golden replay
   covers the combat paths tick by tick and gdUnit4 does not run in an
-  exported build.)* **PASS (2026-11-10, one machine)**: layout 4, 10,000
-  ticks, 0 mismatching ticks, identical final checksum and digest on Debug and
-  Release. Re-run whenever the sim or layout changes. Evidence:
+  exported build.)* **PASS (2026-11-11, one machine)**: layout 6 (with the
+  SimEvents ring), 10,000 ticks, 0 mismatching ticks, identical final checksum
+  and digest on Debug and Release (also passed on layouts 4 and 5). Re-run
+  whenever the sim or layout changes. Evidence:
   `production/qa/evidence/2026-11-10-x5-debug-release-parity.md`.
 - **AC-X6** (I; 18e, 18g, EC-16) GIVEN a speculative tick that sets
   `sim_fault = 1` and is later rolled back, WHEN the confirmed timeline is
@@ -1922,7 +1935,7 @@ pass.
 - **AC-V2** (M; V4, ADR-0001 validation 3) GIVEN a 10,000-tick replay file,
   WHEN replayed on an Intel PC and an AMD PC and repeatedly in CI, THEN every
   per-tick checksum matches. Fewer than two vendors = **PARTIAL**, never a
-  pass. **PARTIAL (2026-11-10)**: the 10,000-tick golden replay recorded on an Intel i7-13620H (Windows) matched every per-tick checksum on an AMD EPYC 9V74 GitHub runner (Linux), CI run for 3035d9e; **layout 4 with combat (2026-11-10):** matched on an AMD EPYC 9V45 runner (user screenshot, CI run for the layout-4 commits). Not yet met: "repeatedly in CI" (one 10,000-tick run so far); the sim is mostly no-op / PLACEHOLDER slots, so the systems the check exists for are not exercised; Debug editor binaries only (Release is AC-X5). Evidence: `production/qa/evidence/2026-11-10-v4-cross-machine-replay.md`.
+  pass. **PARTIAL (2026-11-10)**: the 10,000-tick golden replay recorded on an Intel i7-13620H (Windows) matched every per-tick checksum on an AMD EPYC 9V74 GitHub runner (Linux), CI run for 3035d9e; **layout 4 with combat (2026-11-10):** matched on an AMD EPYC 9V45 runner (user screenshot, CI run for the layout-4 commits). **Current layout 6 has not been run cross-machine yet.** Not yet met: "repeatedly in CI" (one 10,000-tick run so far); the sim is mostly no-op / PLACEHOLDER slots, so the systems the check exists for are not exercised; Debug editor binaries only (Release is AC-X5). Evidence: `production/qa/evidence/2026-11-10-v4-cross-machine-replay.md`.
 - **AC-V3** (P; V5, F9) GIVEN the Tier −1 sim on the development PC (hardware
   recorded), WHEN 10,000 ticks are stepped after warm-up, THEN the mean,
   p99 and p99.9 tick cost including checksum (and snapshot, once rollback
@@ -1932,10 +1945,12 @@ pass.
   `MatchRunner` absorbs up to `MAX_CATCHUP_TICKS` = 4 late ticks per frame, so
   an isolated slow tick is harmless; the floor run measured max 366 µs–1.2 ms
   with p99 ≤ 39 µs)*. A Debug-only figure is provisional; the pass requires a
-  Release measurement. **PARTIAL (2026-11-10)**: with the combat pipeline
-  (layout 4) the Release median is mean 24.5 µs, p99 66, p99.9 165 and
-  `MEMORY_STATIC` Δ 0 — inside the gate, but events, projectiles and SP are not
-  in the pipeline yet. Evidence: `production/qa/evidence/2026-11-10-v5-floor-benchmark.md`.
+  Release measurement. **PARTIAL (2026-11-11)**: with combat and the SimEvents
+  ring (layout 6) the Release median is mean 26.0 µs, p99 67, p99.9 165 and
+  `MEMORY_STATIC` Δ 0 over five runs, each inside the gate (worst p99.9 244 µs);
+  projectiles and SP are not in the pipeline yet. The per-slot breakdown puts
+  ~55 % of tick time in the whole-buffer checksum. (Layout 4: 24.5 / 66 / 165;
+  layout 5: one of five runs exceeded p99.9, judged run-to-run noise.) Evidence: `production/qa/evidence/2026-11-10-v5-floor-benchmark.md`.
 - **AC-V4** (M; Player Fantasy) GIVEN two PCs on LAN, WHEN a planted input
   divergence on one peer is detected at the correct tick, and then a
   10-minute unplanted match is played, THEN zero checksum mismatches are

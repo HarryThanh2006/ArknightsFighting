@@ -59,3 +59,18 @@ same commands as above; Release re-exported from this tree.
 
 **AC-X5: PASS on layout 5 (one machine).** Same caveat: the fixture's KO path
 parity rests on the V5 benchmark counts (29 KOs on every Release run).
+
+## Addendum 2026-11-11 — layout 6 (SimEvents ring)
+
+Code: `de9339f` (SimEvents + emitters, `LAYOUT_VERSION` 6) and `c25a710`
+(presentation only). Fixture regenerated (same seeds). The ring and Event
+Control words are inside the buffer, so every per-tick checksum covers the
+event stream. Same machine and commands.
+
+| Build | Mismatching ticks | First mismatch | Final checksum | Digest of all checksums |
+|---|---|---|---|---|
+| Debug (editor 4.7.2) | 0 / 10,000 | — | -8823252577600630705 | 568123663480405302 |
+| Release (export), run 1 | 0 / 10,000 | — | -8823252577600630705 | 568123663480405302 |
+| Release (export), run 2 | 0 / 10,000 | — | -8823252577600630705 | 568123663480405302 |
+
+**AC-X5: PASS on layout 6 (one machine).**
