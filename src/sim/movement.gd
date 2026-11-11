@@ -39,7 +39,7 @@ const INPUT_RIGHT: int = 2
 static func init(b: PackedInt64Array) -> void:
 	for p: int in SimLayout.P_COUNT:
 		var base: int = SimLayout.P_BASE + p * SimLayout.P_STRIDE
-		for offset: int in range(SimLayout.PF_X, SimLayout.PF_KB_DIR + 1):
+		for offset: int in range(SimLayout.PF_X, SimLayout.PF_KB_RECOIL + 1):
 			b[base + offset] = 0
 		b[base + SimLayout.PF_HITSTUN] = 0
 		var side: int = -1 if p == 0 else 1
@@ -163,12 +163,21 @@ static func reactions(b: PackedInt64Array, was_stopped: int, kit: SimMoveData) -
 			b[i + SimLayout.PF_KB_SPEED] = kit.move(incoming)["kb"]
 			var opponent: int = SimLayout.P_BASE + (1 - p) * SimLayout.P_STRIDE
 			b[i + SimLayout.PF_KB_DIR] = b[opponent + SimLayout.PF_FACING]
+			b[i + SimLayout.PF_KB_RECOIL] = 0
 		elif outgoing < 0:
 			b[i + SimLayout.PF_KB_SPEED] = kit.move(-outgoing)["recoil"]
 			b[i + SimLayout.PF_KB_DIR] = -b[i + SimLayout.PF_FACING]
+			b[i + SimLayout.PF_KB_RECOIL] = 1
 		if was_stopped & (1 << p) or b[i + SimLayout.PF_HITSTOP] > 0:
 			continue
 		var speed: int = b[i + SimLayout.PF_KB_SPEED]
-		b[i + SimLayout.PF_X] += b[i + SimLayout.PF_KB_DIR] * speed
+		var dir: int = b[i + SimLayout.PF_KB_DIR]
+		var x: int = b[i + SimLayout.PF_X] + dir * speed
 		b[i + SimLayout.PF_KB_SPEED] = maxi(0, speed - kit.kb_decel())
+		if b[i + SimLayout.PF_KB_RECOIL] != 0:
+			# D1: recoil the wall clips pushes the opponent away instead (sums commute: slot-order free).
+			var clipped: int = clampi(x, b[SimLayout.A_WALL_L] + PUSH_HW_SU, b[SimLayout.A_WALL_R] - PUSH_HW_SU)
+			b[SimLayout.P_BASE + (1 - p) * SimLayout.P_STRIDE + SimLayout.PF_X] -= x - clipped
+			x = clipped
+		b[i + SimLayout.PF_X] = x
 	resolve(b)

@@ -127,3 +127,26 @@ combat added ~5 µs to the mean and roughly doubled p99 / p99.9 versus the
 movement-only floor. Debug p99.9 (234 µs) is within 16 µs of the budget, so the
 missing systems (events, projectiles, SP) will likely push Debug over; the
 Release figure is the one AC-V3 judges.
+
+## Addendum 2026-11-11 — layout 5 (D1, D3, H2, H3)
+
+Code: the `feat:` commit after `1204f38`, `LAYOUT_VERSION` 5. Same scripted
+inputs (seed 11); the new rules change the fight, so the counts differ from
+layout 4: **425 hits, 27 blocks, 11,314 hit-stop ticks, 29 KOs, 11 matches**
+(identical on all five runs). Release export, Intel Core i7-13620H, Windows 11.
+
+| Build | Run | Mean | p50 | p99 | p99.9 | Max (not gating) | `MEMORY_STATIC` Δ |
+|---|---|---|---|---|---|---|---|
+| Release | 21 | 26.15 | 24 | 79 | 192 | 753 | 0 |
+| Release | 22 | 25.95 | 24 | 78 | 211 | 798 | 0 |
+| Release | 23 | 26.51 | 24 | 83 | 214 | 5,599 | 0 |
+| Release | 24 | 26.30 | 24 | 85 | **263** | 851 | 0 |
+| Release | 25 | 27.15 | 24 | 84 | 232 | 8,899 | 0 |
+| **Release median** | | **26.30** | **24** | **83** | **214** | 851 | 0 |
+
+**Reading:** the median is inside the AC-V3 gate (≤ 250 µs), but **run 24's
+p99.9 (263 µs) exceeds it**: not every run passes, unlike layout 4. Versus
+layout 4 (median 24.50 / 66 / 165), mean +1.8 µs, p99 +17, p99.9 +49. The
+per-tick work added is small (two buffer words, one clamp), so part of the
+tail rise may be machine noise; not investigated. Still a partial floor
+(events, projectiles, SP missing), not a V5 pass. No Debug run this time.

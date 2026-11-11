@@ -5,7 +5,7 @@ class_name SimLayout
 ## Sizes other than the two headers and the event ring are F3 estimates until each
 ## owning GDD fixes its fields. Snapshots are `buffer.duplicate()`: assignment aliases (ADR-0001 R7).
 
-const LAYOUT_VERSION: int = 4
+const LAYOUT_VERSION: int = 5
 ## Hard word limit (user decision 2026-11-09).
 const SIM_BUFFER_WORD_BUDGET: int = 2_048
 
@@ -45,6 +45,8 @@ const PF_MSTATE: int = 8
 const PF_MSTATE_TICKS: int = 9
 const PF_KB_SPEED: int = 10
 const PF_KB_DIR: int = 11
+## 1 while PF_KB_SPEED is block recoil (defense.md D1: wall-clipped recoil transfers to the defender).
+const PF_KB_RECOIL: int = 12
 ## Attack owns move ID, frame and contact latch.
 const PF_ATK_ACTIVE: int = 16
 ## Remaining personal hit-stop, owned by Hit Detection.
@@ -55,6 +57,9 @@ const PF_HP: int = 20
 const PF_HITSTUN: int = 21
 const PF_BLOCKSTUN: int = 22
 const PF_BLOCKING: int = 23
+## Input buffer (hit-detection-damage.md H2): buffered move ID (0 none) and its age in live ticks.
+const PF_BUF_MOVE: int = 24
+const PF_BUF_AGE: int = 25
 
 # --- Input history ring (F10): b[IN_BASE + p * INPUT_RING_TICKS + posmod(tick, INPUT_RING_TICKS)] ---
 const IN_BASE: int = 144

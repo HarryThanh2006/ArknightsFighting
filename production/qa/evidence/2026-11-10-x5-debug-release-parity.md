@@ -42,3 +42,20 @@ events on Release and Debug (595 hits, 71 blocks, 15,766 hit-stop ticks, 38 KOs,
   Release-runnable self-test entry point), or the user accepts the replay
   half as sufficient.
 - Same machine only; cross-CPU Release parity belongs to AC-V2 / LAN.
+
+## Addendum 2026-11-11 — layout 5 (D1, D3, H2, H3)
+
+Code: the `feat:` commit after `1204f38` (this addendum ships in it),
+`LAYOUT_VERSION` 5 (input buffer + block-recoil flag), move data with the Heavy
+arm hurtbox. Fixture regenerated with `tools/replay/make_golden_replay.gd`
+(same seeds, 10,000 ticks). Same machine (Intel Core i7-13620H, Windows 11),
+same commands as above; Release re-exported from this tree.
+
+| Build | Mismatching ticks | First mismatch | Final checksum | Digest of all checksums |
+|---|---|---|---|---|
+| Debug (editor 4.7.2) | 0 / 10,000 | — | -1249531500449012568 | 1594941114614719159 |
+| Release (export), run 1 | 0 / 10,000 | — | -1249531500449012568 | 1594941114614719159 |
+| Release (export), run 2 | 0 / 10,000 | — | -1249531500449012568 | 1594941114614719159 |
+
+**AC-X5: PASS on layout 5 (one machine).** Same caveat: the fixture's KO path
+parity rests on the V5 benchmark counts (29 KOs on every Release run).

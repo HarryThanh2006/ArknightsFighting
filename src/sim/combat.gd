@@ -3,6 +3,9 @@
 const LIGHT: int = 4
 const HEAVY: int = 8
 const BLOCK: int = Movement.INPUT_BLOCK
+## H2 (provisional, tunable): a press stays usable while its age is <= this many live ticks.
+## shortcut: const in code like Movement walk speeds; move to Input/Attack data once the Input GDD exists.
+const BUFFER_TICKS: int = 6
 
 static func base(p: int) -> int:
 	return SimLayout.P_BASE + p * SimLayout.P_STRIDE
@@ -14,6 +17,7 @@ static func word(b: PackedInt64Array, p: int, ago: int = 0) -> int:
 static func attack(b: PackedInt64Array, kit: SimMoveData) -> void:
 	for p: int in SimLayout.P_COUNT:
 		var i: int = base(p)
+		_buffer_press(b, p, i)
 		if b[i + SimLayout.PF_HITSTOP] > 0:
 			continue
 		var move: int = b[i + SimLayout.PF_ATK_ACTIVE]
@@ -23,13 +27,28 @@ static func attack(b: PackedInt64Array, kit: SimMoveData) -> void:
 				b[i + SimLayout.PF_ATK_FRAME] += 1
 				continue
 			cancel(b, i)
-		var held: int = word(b, p)
-		var pressed: int = held & ~word(b, p, 1)
-		if held & BLOCK or b[i + SimLayout.PF_HITSTUN] > 0 or b[i + SimLayout.PF_BLOCKSTUN] > 0:
+		if b[i + SimLayout.PF_HITSTUN] > 0 or b[i + SimLayout.PF_BLOCKSTUN] > 0:
 			continue
-		if pressed & (LIGHT | HEAVY):
-			b[i + SimLayout.PF_ATK_ACTIVE] = 2 if pressed & HEAVY else 1
+		# First actionable tick: the buffered press starts, or is dropped if Block is held.
+		var buffered: int = b[i + SimLayout.PF_BUF_MOVE]
+		b[i + SimLayout.PF_BUF_MOVE] = 0
+		b[i + SimLayout.PF_BUF_AGE] = 0
+		if buffered != 0 and not (word(b, p) & BLOCK):
+			b[i + SimLayout.PF_ATK_ACTIVE] = buffered
 			b[i + SimLayout.PF_ATK_FRAME] = 1
+
+## H2: age the buffered press, expire it after BUFFER_TICKS, store a fresh Light/Heavy edge
+## (Heavy wins a same-tick press; the newest press replaces an older one).
+static func _buffer_press(b: PackedInt64Array, p: int, i: int) -> void:
+	if b[i + SimLayout.PF_BUF_MOVE] != 0:
+		b[i + SimLayout.PF_BUF_AGE] += 1
+		if b[i + SimLayout.PF_BUF_AGE] > BUFFER_TICKS:
+			b[i + SimLayout.PF_BUF_MOVE] = 0
+			b[i + SimLayout.PF_BUF_AGE] = 0
+	var pressed: int = word(b, p) & ~word(b, p, 1)
+	if pressed & (LIGHT | HEAVY):
+		b[i + SimLayout.PF_BUF_MOVE] = 2 if pressed & HEAVY else 1
+		b[i + SimLayout.PF_BUF_AGE] = 0
 
 static func cancel(b: PackedInt64Array, i: int) -> void:
 	b[i + SimLayout.PF_ATK_ACTIVE] = 0
@@ -41,7 +60,9 @@ static func defense(b: PackedInt64Array) -> void:
 		var i: int = base(p)
 		if b[i + SimLayout.PF_HITSTOP] == 0:
 			var can_guard: bool = b[i + SimLayout.PF_ATK_ACTIVE] == 0 and b[i + SimLayout.PF_HITSTUN] == 0
-			b[i + SimLayout.PF_BLOCKING] = int(can_guard and (word(b, p) & BLOCK) != 0)
+			# D3: guard holds for the whole blockstun even if Block is released.
+			var wants: bool = (word(b, p) & BLOCK) != 0 or b[i + SimLayout.PF_BLOCKSTUN] > 0
+			b[i + SimLayout.PF_BLOCKING] = int(can_guard and wants)
 
 ## Positive move ID for a hit, negative for a block, zero for no contact.
 static func contact(b: PackedInt64Array, p: int, kit: SimMoveData) -> int:
@@ -100,6 +121,8 @@ static func reset_player(b: PackedInt64Array, p: int, kit: SimMoveData) -> void:
 	b[i + SimLayout.PF_HITSTOP] = 0
 	b[i + SimLayout.PF_BLOCKSTUN] = 0
 	b[i + SimLayout.PF_BLOCKING] = 0
+	b[i + SimLayout.PF_BUF_MOVE] = 0
+	b[i + SimLayout.PF_BUF_AGE] = 0
 	b[SimLayout.HIT_BASE + p * SimLayout.HIT_STRIDE] = 0
 
 static func _overlap(b: PackedInt64Array, a: int, strike: Array, d: int, hurt: Array) -> bool:
