@@ -4,8 +4,6 @@ extends Node2D
 ## (ADR-0002 rule 5, sim-core rule 18f). Presentation & Feel is not designed yet:
 ## every value here is a stand-in. Never writes to the sim.
 
-## Contact height for flashes, su (event payload has x only; see sim-core OQ-18).
-const CONTACT_Y_SU: int = 9_600
 const FLASH_SECONDS: float = 0.18
 const SHAKE_SECONDS: float = 0.2
 const SHAKE_PX: float = 7.0
@@ -13,7 +11,7 @@ const BANNER_SECONDS: float = 1.4
 ## Move id 2 is Heavy in the Tier −1 kit.
 const HEAVY_ID: int = 2
 
-## Maps a sim x in su to a screen point at CONTACT_Y_SU (set by the owning scene).
+## Maps a sim point (x, y in su) to a screen point (set by the owning scene).
 var su_to_px: Callable = func(_x_su: int, _y_su: int) -> Vector2: return Vector2.ZERO
 ## Node shaken on a Heavy hit (presentation offset only).
 var shake_target: Node2D
@@ -39,6 +37,9 @@ func _ready() -> void:
 	_sfx["heavy"] = _player(_make_wav(90.0, 0.45, 0.28, 14.0))
 	_sfx["block"] = _player(_make_wav(600.0, 0.8, 0.07, 45.0))
 	_sfx["ko"] = _player(_make_wav(160.0, 0.3, 0.7, 4.0))
+	_sfx["swing_light"] = _player(_make_whoosh(0.12, 0.35, 0.6))
+	_sfx["swing_heavy"] = _player(_make_whoosh(0.22, 0.15, 0.8))
+	_sfx["whiff"] = _player(_make_whoosh(0.18, 0.08, 0.3))
 
 
 ## New match (fresh init): start reading from seq 0 again.
@@ -65,6 +66,10 @@ func _on_event(type: int, a0: int, a1: int, a2: int) -> void:
 	@warning_ignore("integer_division")
 	var move: int = a0 / 2
 	match type:
+		SimEvents.ATTACK_START:
+			_play("swing_heavy" if move == HEAVY_ID else "swing_light")
+		SimEvents.WHIFF:
+			_play("whiff")
 		SimEvents.HIT:
 			_flash(a2, Color(1.0, 0.85, 0.4))
 			_play("heavy" if move == HEAVY_ID else "light")
@@ -111,8 +116,10 @@ func _draw() -> void:
 		draw_circle(_flash_pos[i], 10.0 + 26.0 * (1.0 - t), c)
 
 
-func _flash(x_su: int, colour: Color) -> void:
-	var at: Vector2 = su_to_px.call(x_su, CONTACT_Y_SU)
+## Flash at a packed HIT/BLOCK contact point (half-su, SimEvents.pack_contact).
+func _flash(packed: int, colour: Color) -> void:
+	@warning_ignore("integer_division")
+	var at: Vector2 = su_to_px.call(SimEvents.contact_x2(packed) / 2, SimEvents.contact_y2(packed) / 2)
 	_flash_pos.append(at)
 	_flash_col.append(colour)
 	_flash_left.append(FLASH_SECONDS)
@@ -147,6 +154,29 @@ func _make_wav(thump_hz: float, noise: float, seconds: float, decay: float) -> A
 		var t: float = float(i) / rate
 		var env: float = exp(-t * decay)
 		var v: float = (sin(TAU * thump_hz * t * (1.0 - t * 2.0)) * (1.0 - noise) + rng.randf_range(-1.0, 1.0) * noise) * env
+		data.encode_s16(i * 2, int(clampf(v, -1.0, 1.0) * 30000.0))
+	var w := AudioStreamWAV.new()
+	w.format = AudioStreamWAV.FORMAT_16_BITS
+	w.mix_rate = rate
+	w.stereo = false
+	w.data = data
+	return w
+
+
+## Procedural placeholder swing: low-passed noise under a sine-shaped swell.
+## `smooth` is the one-pole filter coefficient (lower = duller, heavier).
+func _make_whoosh(seconds: float, smooth: float, gain: float) -> AudioStreamWAV:
+	var rate: int = 22050
+	var n: int = int(rate * seconds)
+	var data := PackedByteArray()
+	data.resize(n * 2)
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 11
+	var lp: float = 0.0
+	for i: int in n:
+		var t: float = float(i) / float(n)
+		lp += smooth * (rng.randf_range(-1.0, 1.0) - lp)
+		var v: float = lp * sin(PI * t) * gain * 3.0
 		data.encode_s16(i * 2, int(clampf(v, -1.0, 1.0) * 30000.0))
 	var w := AudioStreamWAV.new()
 	w.format = AudioStreamWAV.FORMAT_16_BITS

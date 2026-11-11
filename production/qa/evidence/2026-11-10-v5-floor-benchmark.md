@@ -207,3 +207,22 @@ ROUND_* emission), block_a 1.35 → 1.46, checksum 29.67 → 29.59, every other
 slot unchanged within noise. Events cost ≈ 1.7 µs per tick; the checksum is
 still ~55 % of slot time. Projectiles and SP are still missing: partial
 floor, not a V5 pass.
+
+## Addendum 2026-11-11 — layout 7 (ATTACK_START, WHIFF, packed contact point)
+
+Code: `7a292c3`. Same inputs and combat counts (425 / 27 / 11,314 / 29 / 11).
+Release export, Intel Core i7-13620H.
+
+| Build | Run | Mean | p50 | p99 | p99.9 | Max (not gating) | `MEMORY_STATIC` Δ |
+|---|---|---|---|---|---|---|---|
+| Release | 31 | 26.72 | 25 | 67 | 157 | 1,594 | 0 |
+| Release | 32 | 26.58 | 25 | 59 | 164 | 3,780 | 0 |
+| Release | 33 | 26.76 | 25 | 63 | 232 | 8,644 | 0 |
+| Release | 34 | 26.92 | 25 | 67 | 139 | 4,102 | 0 |
+| Release | 35 | 25.82 | 25 | 44 | 110 | 511 | 0 |
+| **Release median** | | **26.72** | **25** | **63** | **157** | 3,780 | 0 |
+
+All five runs inside AC-V3 (worst p99.9 232 µs). Per-slot medians vs layout 6:
+attack 3.77 → 5.24 µs (WHIFF check reads the hitbox track each advancing
+tick, plus ATTACK_START), resolve 6.52 → 6.31, round_check 1.41 → 1.35,
+checksum 29.6 → 29.1. Mean per tick +0.7 µs.

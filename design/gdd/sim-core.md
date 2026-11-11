@@ -1943,9 +1943,9 @@ round-check slot (end of block B) on each round's first live tick.*
   *(Amended 2026-11-10, user decision: the clause "and the sim test suite
   yields identical buffers on both builds" is dropped — the golden replay
   covers the combat paths tick by tick and gdUnit4 does not run in an
-  exported build.)* **PASS (2026-11-11, one machine)**: layout 6 (with the
-  SimEvents ring), 10,000 ticks, 0 mismatching ticks, identical final checksum
-  and digest on Debug and Release (also passed on layouts 4 and 5). Re-run
+  exported build.)* **PASS (2026-11-11, one machine)**: layout 7 (SimEvents
+  ring with ATTACK_START / WHIFF / packed contact point), 10,000 ticks, 0 mismatching ticks, identical final checksum
+  and digest on Debug and Release (also passed on layouts 4, 5 and 6). Re-run
   whenever the sim or layout changes. Evidence:
   `production/qa/evidence/2026-11-10-x5-debug-release-parity.md`.
 - **AC-X6** (I; 18e, 18g, EC-16) GIVEN a speculative tick that sets
@@ -1964,7 +1964,7 @@ round-check slot (end of block B) on each round's first live tick.*
 - **AC-V2** (M; V4, ADR-0001 validation 3) GIVEN a 10,000-tick replay file,
   WHEN replayed on an Intel PC and an AMD PC and repeatedly in CI, THEN every
   per-tick checksum matches. Fewer than two vendors = **PARTIAL**, never a
-  pass. **PARTIAL (2026-11-10)**: the 10,000-tick golden replay recorded on an Intel i7-13620H (Windows) matched every per-tick checksum on an AMD EPYC 9V74 GitHub runner (Linux), CI run for 3035d9e; **layout 4 with combat (2026-11-10):** matched on an AMD EPYC 9V45 runner (user screenshot, CI run for the layout-4 commits). **Current layout 6 has not been run cross-machine yet.** Not yet met: "repeatedly in CI" (one 10,000-tick run so far); the sim is mostly no-op / PLACEHOLDER slots, so the systems the check exists for are not exercised; Debug editor binaries only (Release is AC-X5). Evidence: `production/qa/evidence/2026-11-10-v4-cross-machine-replay.md`.
+  pass. **PARTIAL (2026-11-10)**: the 10,000-tick golden replay recorded on an Intel i7-13620H (Windows) matched every per-tick checksum on an AMD EPYC 9V74 GitHub runner (Linux), CI run for 3035d9e; **layout 4 with combat (2026-11-10):** matched on an AMD EPYC 9V45 runner (user screenshot, CI run for the layout-4 commits). **Current layout 7 has not been run cross-machine yet.** Not yet met: "repeatedly in CI" (one 10,000-tick run so far); the sim is mostly no-op / PLACEHOLDER slots, so the systems the check exists for are not exercised; Debug editor binaries only (Release is AC-X5). Evidence: `production/qa/evidence/2026-11-10-v4-cross-machine-replay.md`.
 - **AC-V3** (P; V5, F9) GIVEN the Tier −1 sim on the development PC (hardware
   recorded), WHEN 10,000 ticks are stepped after warm-up, THEN the mean,
   p99 and p99.9 tick cost including checksum (and snapshot, once rollback
@@ -1975,8 +1975,9 @@ round-check slot (end of block B) on each round's first live tick.*
   an isolated slow tick is harmless; the floor run measured max 366 µs–1.2 ms
   with p99 ≤ 39 µs)*. A Debug-only figure is provisional; the pass requires a
   Release measurement. **PARTIAL (2026-11-11)**: with combat and the SimEvents
-  ring (layout 6) the Release median is mean 26.0 µs, p99 67, p99.9 165 and
-  `MEMORY_STATIC` Δ 0 over five runs, each inside the gate (worst p99.9 244 µs);
+  ring (layout 7) the Release median is mean 26.7 µs, p99 63, p99.9 157 and
+  `MEMORY_STATIC` Δ 0 over five runs, each inside the gate (worst p99.9 232 µs;
+  layout 6: 26.0 / 67 / 165);
   projectiles and SP are not in the pipeline yet. The per-slot breakdown puts
   ~55 % of tick time in the whole-buffer checksum. (Layout 4: 24.5 / 66 / 165;
   layout 5: one of five runs exceeded p99.9, judged run-to-run noise.) Evidence: `production/qa/evidence/2026-11-10-v5-floor-benchmark.md`.

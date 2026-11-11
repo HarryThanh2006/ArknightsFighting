@@ -74,3 +74,15 @@ event stream. Same machine and commands.
 | Release (export), run 2 | 0 / 10,000 | — | -8823252577600630705 | 568123663480405302 |
 
 **AC-X5: PASS on layout 6 (one machine).**
+
+## Addendum 2026-11-11 — layout 7 (ATTACK_START, WHIFF, packed contact point)
+
+Code: `7a292c3`. Fixture regenerated. Same machine and commands.
+
+| Build | Mismatching ticks | First mismatch | Final checksum | Digest of all checksums |
+|---|---|---|---|---|
+| Debug (editor 4.7.2) | 0 / 10,000 | — | 1419703315605913082 | -8590935311795763469 |
+| Release (export), run 1 | 0 / 10,000 | — | 1419703315605913082 | -8590935311795763469 |
+| Release (export), run 2 | 0 / 10,000 | — | 1419703315605913082 | -8590935311795763469 |
+
+**AC-X5: PASS on layout 7 (one machine).**
