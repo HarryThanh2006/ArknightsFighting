@@ -1,6 +1,6 @@
 # Hit Detection & Damage
 
-**Status: Draft (reverse-documented from code at commit `43bc718`, not yet reviewed).** Foundation · systems index #6. Drafted by Codex 2026-11-10, checked against code 2026-11-11. Tier −1 covers two grounded mirror-kit fighters using Light, Heavy and Block (code unchanged since `ed6568f`, layout 4). Design review and ADR-0001/0002 acceptance are pending.
+**Status: Draft (reverse-documented from code at commit `43bc718`; code-chosen rules decided 2026-11-11 by the user, H2/H3 implemented at layout 5; not yet design-reviewed).** Foundation · systems index #6. Drafted by Codex 2026-11-10, checked against code 2026-11-11. Tier −1 covers two grounded mirror-kit fighters using Light, Heavy and Block (code unchanged since `ed6568f`, layout 4). Design review and ADR-0001/0002 acceptance are pending.
 
 ## Overview
 
@@ -55,28 +55,30 @@ Current integer values come from the [mirror kit](../../data/moves/tier_minus_on
 | Light | 6–8 / 16 | 60 | 6 / 3 | 15 / 8 | 600 / 800 |
 | Heavy | 12–15 / 29 | 140 | 12 / 6 | 22 / 6 | 1,400 / 400 |
 
+Heavy also has an arm hurtbox on frames 12–29: centre (6,000, 9,750), half-size 2,000 × 2,750 su (H3, provisional; safe range: forward edge 6,000–9,000 su, beyond Heavy's own 16,500 reach it would make Heavy trade badly). Input buffer `Combat.BUFFER_TICKS` = 6 live ticks (H2, provisional; safe range 3–8: lower drops presses, higher causes unwanted delayed attacks).
+
 Start HP is 1,000. KB deceleration is 100 su/tick. Changing tuning or frame geometry changes the move-data hash; regenerate the fixture when the kit changes. Tune hit-stop with input responsiveness and hit/guard recognition in a two-player playtest.
 
-## Rules chosen in code, awaiting user approval
+## Rules chosen in code — decided 2026-11-11 (user)
 
-No approved doc (concept, systems-index briefs, Sim Core, Movement GDD, ADRs) decided these. The code chose them. Cite: `combat.gd` = `src/sim/combat.gd`, `round_flow.gd` = `src/sim/round_flow.gd`, `movement.gd` = `src/sim/movement.gd`, kit = `data/moves/tier_minus_one.cfg`.
+User decision 2026-11-11: change H2 and H3, keep every other row. Before that, no approved doc (concept, systems-index briefs, Sim Core, Movement GDD, ADRs) decided these. The code chose them. Cite: `combat.gd` = `src/sim/combat.gd`, `round_flow.gd` = `src/sim/round_flow.gd`, `movement.gd` = `src/sim/movement.gd`, kit = `data/moves/tier_minus_one.cfg`.
 
-| # | Rule | What code does today | Conflict with a decided rule? | Recommendation |
+| # | Rule | What code did at `43bc718` | Conflict with a decided rule? | Decision 2026-11-11 (user) |
 |---|---|---|---|---|
-| H1 | Same-tick trade | Both contacts gathered before any write; both take full damage and both get stop (`combat.gd:resolve`). | None. | Keep. |
-| H2 | No input buffer | A press counts only as a fresh edge on a tick where `attack()` runs. Presses during hit-stop, stun, an active move or held Block are dropped (`combat.gd:attack`). | **Yes, soft:** concept lists "input buffer" among combat features. | Change at Attack GDD: add a short buffer (a few ticks) so post-hit-stop presses are not lost. |
-| H3 | Attack hurtbox = idle hurtbox | Light/Heavy hurtbox is the neutral box on every frame (kit `hurtboxes`). Whiffs can only be punished at the body. | None, but weakens "whiff = punishable". | Change in data at Tier 0: extend Heavy hurtbox over active + recovery. |
-| H4 | Damage | Light 60, Heavy 140, start HP 1,000, no scaling (kit). | None. | Keep (provisional). |
-| H5 | Chip damage | Zero; Block loses no HP (`combat.gd:apply_hit`). | None (Throw is the anti-turtle tool). | Keep. |
-| H6 | Hit-stop | Same length on **both** fighters: Light 6 / Heavy 12 on hit, `div_floor(stop, 2)` = 3 / 6 on block. Round clock keeps running (`combat.gd:apply_hit`, `round_flow.gd:check`). | None. | Keep. |
-| H7 | Hitstun | Light 15, Heavy 22, overwritten (not added) on re-hit (`movement.gd:reactions`). Derived on-hit advantage Light +5…+7, Heavy +5…+8. | None. | Keep. [Measured] Light does **not** link into Light: the second Light is blocked, mid-screen and in the corner (headless probe 2026-11-11), so there is no corner loop. |
-| H8 | Knockback | Defender pushed along the attacker's facing: Light 600, Heavy 1,400 su/tick, −100 per moving tick (≈2,100 / 10,500 su total); clamped at the wall, no transfer (`movement.gd:reactions`). | None. | Keep for Tier −1. |
-| H9 | Hit interrupts | A clean hit cancels the defender's move on any frame (no armor) and clears blockstun (`combat.gd:apply_hit`). | None (matches counterplay floor). | Keep. |
-| H10 | One contact per swing | Contact latch per move; multiple boxes/frames hit once (`combat.gd:contact`). | None. | Keep. |
-| H11 | Facing during stun | Facing is locked only while attacking or airborne; it may turn during hitstun/blockstun (`movement.gd:_next_facing`). Movement open question. | None. Moot in Tier −1: no jump, pushboxes block passing. | Keep; revisit with jump. |
-| R1 | Tie / double KO | Equal HP at timeout or double KO → replay the same round number, no point (`round_flow.gd:check`). | None (concept only says higher HP% wins). | Keep. |
-| R2 | Match and round shape | First to 2 wins (Bo3); 5,940-tick clock (99 s); 90-tick interval; spawn at ±15,000 su (3 m apart) (`round_flow.gd`, `movement.gd:init`). | Matches Bo3 + "higher HP% wins". | Keep. |
-| R3 | KO timing | KO and timeout checked after hit resolution and reactions each live tick; HP floors at 0. | None. | Keep. |
+| H1 | Same-tick trade | Both contacts gathered before any write; both take full damage and both get stop (`combat.gd:resolve`). | None. | **Decided: keep.** |
+| H2 | No input buffer | A press counts only as a fresh edge on a tick where `attack()` runs. Presses during hit-stop, stun, an active move or held Block are dropped (`combat.gd:attack`). | **Yes, soft:** concept lists "input buffer" among combat features. | **Decided: change → 6-tick buffer (layout 5).** A fresh Light/Heavy press edge (Heavy wins a same-tick press; the newest press replaces an older one) is stored with age 0 in the player's own region (`PF_BUF_MOVE`, `PF_BUF_AGE`, sim-core rule 5) on every live tick, including hit-stop, stun and an active move. Age +1 per live tick; it expires when age > 6 (usable on the press tick and the next 6). It is consumed on the first tick the character can act (no hit-stop, move finished, hitstun = blockstun = 0): the move starts on frame 1, or the press is **dropped** if Block is held that tick. Block is a held state, never buffered. Global freeze does not age it (`combat.gd:_buffer_press`, `attack`). |
+| H3 | Attack hurtbox = idle hurtbox | Light/Heavy hurtbox is the neutral box on every frame (kit `hurtboxes`). Whiffs can only be punished at the body. | None, but weakens "whiff = punishable". | **Decided: change → Heavy arm hurtbox, frames 12–29 (active + recovery),** centre (6,000, 9,750) su facing-local, half-size 2,000 × 2,750 (provisional). Heavy whiffs at ≥ 16,500 su; a Light now reaches the arm at < 18,500 su (6,500 + 4,000 + 6,000 + 2,000). Window at 17,000 su: Light pressed 4–23 ticks after the Heavy press connects (on Heavy frames 12–29) (kit `heavy.hurtboxes`). |
+| H4 | Damage | Light 60, Heavy 140, start HP 1,000, no scaling (kit). | None. | **Decided: keep.** |
+| H5 | Chip damage | Zero; Block loses no HP (`combat.gd:apply_hit`). | None (Throw is the anti-turtle tool). | **Decided: keep.** |
+| H6 | Hit-stop | Same length on **both** fighters: Light 6 / Heavy 12 on hit, `div_floor(stop, 2)` = 3 / 6 on block. Round clock keeps running (`combat.gd:apply_hit`, `round_flow.gd:check`). | None. | **Decided: keep.** |
+| H7 | Hitstun | Light 15, Heavy 22, overwritten (not added) on re-hit (`movement.gd:reactions`). Derived on-hit advantage Light +5…+7, Heavy +5…+8. | None. | **Decided: keep.** |
+| H8 | Knockback | Defender pushed along the attacker's facing: Light 600, Heavy 1,400 su/tick, −100 per moving tick (≈2,100 / 10,500 su total); clamped at the wall, no transfer (`movement.gd:reactions`). | None. | **Decided: keep.** |
+| H9 | Hit interrupts | A clean hit cancels the defender's move on any frame (no armor) and clears blockstun (`combat.gd:apply_hit`). | None (matches counterplay floor). | **Decided: keep.** |
+| H10 | One contact per swing | Contact latch per move; multiple boxes/frames hit once (`combat.gd:contact`). | None. | **Decided: keep.** |
+| H11 | Facing during stun | Facing is locked only while attacking or airborne; it may turn during hitstun/blockstun (`movement.gd:_next_facing`). Movement open question. | None. Moot in Tier −1: no jump, pushboxes block passing. | **Decided: keep.** |
+| R1 | Tie / double KO | Equal HP at timeout or double KO → replay the same round number, no point (`round_flow.gd:check`). | None (concept only says higher HP% wins). | **Decided: keep.** |
+| R2 | Match and round shape | First to 2 wins (Bo3); 5,940-tick clock (99 s); 90-tick interval; spawn at ±15,000 su (3 m apart) (`round_flow.gd`, `movement.gd:init`). | Matches Bo3 + "higher HP% wins". | **Decided: keep.** |
+| R3 | KO timing | KO and timeout checked after hit resolution and reactions each live tick; HP floors at 0. | None. | **Decided: keep.** |
 
 ## Acceptance Criteria
 
@@ -88,6 +90,8 @@ No approved doc (concept, systems-index briefs, Sim Core, Movement GDD, ADRs) de
 | HD4 | Restore a snapshot during hit-stop and replay the same words. Every subsequent checksum matches. | Covered by `test_snapshot_during_hitstop_resumes_identically`. Cross-machine layout-4 verification remains open. |
 | HD5 | Two lethal Lights on the last clock tick produce a draw, then replay the round at full HP with unchanged scores. | Covered by `test_final_tick_trade_double_ko_replays_same_round`. |
 | HD6 | Multiple boxes or multiple active frames from one swing deal damage once. Freeze for N ticks across a contact preserves the records through the next live tick's early slots. | [Unverified] Add direct multi-box and EC-30 integration oracles. |
+| HD8 | H2: whiffed Light (16 frames) pressed again at tick 10 starts on tick 16 (first actionable tick); pressed at tick 9 (age 7) it does not. Defender of a blocked Heavy pressing Light 6 ticks before its first actionable tick T (while in stop or blockstun) starts Light on T, not before; 7 ticks before, nothing starts. With Block still held on T the press is dropped. | Covered by `combat_decisions_test.gd` (3 buffer tests). |
+| HD9 | H3: Heavy at 17,000 su never connects; a Light pressed k ticks after the Heavy press hits exactly for k = 4…23, for both player slots. | Covered by `test_whiffed_heavy_is_punished_by_light_in_frame_window`. |
 | HD7 | Future event drain reports one critical character contact per attacker, including simultaneous hits; the first Ultimate hit generates exactly one critical event for that contact. | BLOCKED on SimEvents and the combat Ultimate. |
 
 Evidence sources: [combat tests](../../tests/unit/movement/tier_minus_one_combat_test.gd), [replay tests](../../tests/integration/sim_core/sim_core_replay_test.gd), [hit resolution](../../src/sim/combat.gd).
