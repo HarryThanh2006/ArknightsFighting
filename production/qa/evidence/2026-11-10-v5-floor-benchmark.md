@@ -150,3 +150,35 @@ layout 4 (median 24.50 / 66 / 165), mean +1.8 µs, p99 +17, p99.9 +49. The
 per-tick work added is small (two buffer words, one clamp), so part of the
 tail rise may be machine noise; not investigated. Still a partial floor
 (events, projectiles, SP missing), not a V5 pass. No Debug run this time.
+
+## Addendum 2026-11-11 — per-slot breakdown, layout 5 (before SimEvents)
+
+`V5Bench` now adds a second pass over the same inputs that times each pipeline
+slot separately (tooling copy of `Sim.step` / `SimPipeline.block_b` order).
+The timer has 1 µs resolution and its calls add overhead, so the per-slot
+means sum to ~50 µs against a ~26 µs whole-tick mean: read them as
+**shares**, not absolute costs. Release export of `acb172c` + this tool
+change, Intel Core i7-13620H. Three runs; mean per slot in µs (p99.9 in brackets).
+
+| Slot | Run A | Run B | Run C |
+|---|---|---|---|
+| snapshot (`duplicate`) | 0.46 [5] | 0.45 [7] | 0.46 [5] |
+| block_a | 1.18 [21] | 1.35 [40] | 1.43 [30] |
+| interval | 0.18 [1] | 0.21 [2] | 0.22 [2] |
+| ai (PRNG) | 1.20 [19] | 1.24 [32] | 1.16 [26] |
+| movement | 3.83 [104] | 4.16 [86] | 4.13 [70] |
+| attack | 3.47 [103] | 3.70 [80] | 3.72 [67] |
+| defense | 1.64 [41] | 1.80 [46] | 1.76 [41] |
+| resolve (hit detection) | 4.93 [164] | 5.36 [93] | 5.31 [83] |
+| reactions | 2.66 [76] | 2.74 [66] | 2.76 [57] |
+| round_check | 0.92 [19] | 1.06 [25] | 1.01 [19] |
+| **checksum (whole buffer)** | **28.49 [650]** | **29.85 [293]** | **29.67 [184]** |
+| Whole tick (first pass): mean / p99 / p99.9 | 26.01 / 79 / **298** | 25.65 / 73 / 186 | 26.05 / 75 / 166 |
+
+**Reading:** the per-tick checksum over all 1,624 words is ~57–60 % of slot
+time and owns the largest tails; the snapshot `duplicate` is negligible.
+Gameplay slots together are ~40 %. Whole-tick p99.9 varied 166–298 µs across
+three runs of identical code, so yesterday's single 263 µs run is within this
+machine's run-to-run tail noise, not a code regression. The cheapest lever, if
+the budget gets tight, is the checksum (e.g. a native hash over the packed
+bytes instead of a GDScript loop) — a design change that needs the user's OK.

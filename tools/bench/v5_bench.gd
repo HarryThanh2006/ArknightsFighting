@@ -86,6 +86,7 @@ static func run() -> String:
 		"combat exercised: hits %d | blocks %d | hit-stop ticks %d | KOs %d | matches completed %d" % [hits, blocks, hitstop_ticks, kos, restarts],
 		"MEMORY_STATIC delta over run: %d bytes" % (mem_after - mem_before),
 	])
+	lines.append_array(_slot_breakdown(words))
 	return "
 ".join(lines)
 
@@ -110,4 +111,85 @@ static func _combat_inputs(ticks: int) -> PackedInt64Array:
 				left[p] = SimRng.range_i(gen, 0, 3, 20)
 			left[p] -= 1
 			out.append(held[p])
+	return out
+
+
+## Slot names for the per-slot pass, in pipeline order.
+const SLOTS: PackedStringArray = ["snapshot", "block_a", "interval", "ai", "movement", "attack",
+	"defense", "resolve", "reactions", "round_check", "checksum"]
+
+
+## Per-slot pass: the same ticks again, stepping the slots of Sim.step / SimPipeline.block_b
+## one by one with a timer around each (tooling copy of the order; keep in sync with
+## sim_pipeline.gd). 1 us timer resolution: per-slot means are approximate, sums are not.
+static func _slot_breakdown(words: PackedInt64Array) -> PackedStringArray:
+	var sim := Sim.new()
+	sim.init(SEED)
+	var n: int = SLOTS.size()
+	var cost: Array[PackedInt64Array] = []
+	for k: int in n:
+		var c := PackedInt64Array()
+		c.resize(TICKS)
+		cost.append(c)
+	var restarts: int = 0
+	for t: int in WARMUP_TICKS + TICKS:
+		var row: int = t - WARMUP_TICKS
+		var w0: int = words[2 * t]
+		var w1: int = words[2 * t + 1]
+		var b: PackedInt64Array = sim.buffer
+		var kit: SimMoveData = sim.data
+		var tk: PackedInt64Array = PackedInt64Array()
+		tk.resize(n + 1)
+		tk[0] = Time.get_ticks_usec()
+		var snap := sim.snapshot()
+		tk[1] = Time.get_ticks_usec()
+		SimPipeline.block_a(b, w0, w1)
+		tk[2] = Time.get_ticks_usec()
+		var frozen: bool = b[SimLayout.H_FREEZE_TICKS] > 0
+		var interval: bool = b[SimLayout.R_INTERVAL] > 0
+		if frozen:
+			b[SimLayout.H_FREEZE_TICKS] -= 1
+		elif interval:
+			SimPipeline.RoundFlow.advance_interval(b, kit)
+		tk[3] = Time.get_ticks_usec()
+		if not frozen and not interval:
+			SimPipeline._placeholder_ai(b)
+			tk[4] = Time.get_ticks_usec()
+			Movement.step(b)
+			tk[5] = Time.get_ticks_usec()
+			SimPipeline.Combat.attack(b, kit)
+			tk[6] = Time.get_ticks_usec()
+			SimPipeline.Combat.defense(b)
+			tk[7] = Time.get_ticks_usec()
+			var was_stopped: int = 0
+			for player: int in SimLayout.P_COUNT:
+				if b[SimPipeline.Combat.base(player) + SimLayout.PF_HITSTOP] > 0:
+					was_stopped |= 1 << player
+			SimPipeline.Combat.resolve(b, kit)
+			tk[8] = Time.get_ticks_usec()
+			Movement.reactions(b, was_stopped, kit)
+			tk[9] = Time.get_ticks_usec()
+			SimPipeline.RoundFlow.check(b)
+			tk[10] = Time.get_ticks_usec()
+		else:
+			for k: int in range(4, 11):
+				tk[k] = tk[3]
+		SimHash.hash_words(b)
+		tk[11] = Time.get_ticks_usec()
+		snap.clear()
+		if row >= 0:
+			for k: int in n:
+				cost[k][row] = tk[k + 1] - tk[k]
+		if b[SimLayout.R_MATCH_OVER] != 0:
+			restarts += 1
+			sim.init(SEED + restarts)
+	var out := PackedStringArray(["per-slot pass (same inputs; us; 1 us timer resolution):",
+		"slot          mean     p99  p99.9"])
+	for k: int in n:
+		var sorted := cost[k].duplicate()
+		sorted.sort()
+		var total: int = 0
+		for v: int in cost[k]:
+			total += v
+		out.append("%-12s %6.2f  %6d %6d" % [SLOTS[k], float(total) / TICKS, sorted[int(TICKS * 0.99)], sorted[int(TICKS * 0.999)]])
 	return out
