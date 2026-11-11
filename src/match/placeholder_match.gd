@@ -22,8 +22,11 @@ var _runner: MatchRunner
 var _boxes: Array[ColorRect] = []
 var _feedback := PlaceholderEventFeedback.new()
 ## Art spike (design/art/sprite-spec-2d.md): F2 boxes <-> sprites, F4 hurt/hit box overlay.
-const SPRITE_DIR: String = "res://assets/characters/guard_blockout"
-const SPRITE_CHAR: String = "guard_blockout"
+## First character (user 2026-11-11); its hand-drawn strips override the blockout per animation.
+const SPRITE_DIR: String = "res://assets/characters/surtr"
+const SPRITE_CHAR: String = "surtr"
+const BLOCKOUT_DIR: String = "res://assets/characters/guard_blockout"
+const BLOCKOUT_CHAR: String = "guard_blockout"
 var sprite_mode: bool = false
 var box_overlay: bool = false
 var _sprites: Array[CharacterSprite] = []
@@ -59,7 +62,7 @@ func _ready() -> void:
 	for p: int in 2:
 		var spr := CharacterSprite.new()
 		spr.player = p
-		if not spr.load_character(SPRITE_DIR, SPRITE_CHAR):
+		if not spr.load_character(SPRITE_DIR, SPRITE_CHAR, BLOCKOUT_DIR, BLOCKOUT_CHAR):
 			break
 		add_child(spr)
 		_sprites.append(spr)

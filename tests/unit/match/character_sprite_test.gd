@@ -42,3 +42,14 @@ func test_attack_ranges_cover_move_and_isolate_active_frames() -> void:
 				active_drawings += 1
 		assert_int(expect_next - 1).override_failure_message(anim).is_equal(total)
 		assert_int(active_drawings).override_failure_message(anim).is_equal(1)
+
+## Drop-in override: a character folder without a strip falls back to the blockout's;
+## a folder that has the strip uses its own.
+func test_strip_path_falls_back_per_animation() -> void:
+	var blockout: String = "res://assets/characters/guard_blockout"
+	var surtr: String = "res://assets/characters/surtr"
+	assert_str(CharacterSprite.strip_path(surtr, "surtr", blockout, "guard_blockout", "light")).is_equal(
+		blockout + "/guard_blockout_light.png")
+	assert_str(CharacterSprite.strip_path(blockout, "guard_blockout", surtr, "surtr", "light")).is_equal(
+		blockout + "/guard_blockout_light.png")
+	assert_str(CharacterSprite.strip_path(surtr, "surtr", "", "", "light")).is_equal(surtr + "/surtr_light.png")

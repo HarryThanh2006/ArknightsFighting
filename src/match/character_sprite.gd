@@ -18,8 +18,10 @@ var _enter_state_ticks: int = 0
 var _enter_tick: int = 0
 
 
-## Loads `<dir>/frames.cfg` and `<dir>/<name>_<anim>.png`. Returns false on missing data.
-func load_character(dir: String, char_name: String) -> bool:
+## Loads `<dir>/frames.cfg` and, per animation, `<dir>/<name>_<anim>.png`, falling back to
+## the strip in `fallback_dir` (blockout) when that animation is not drawn yet.
+## Returns false on missing data.
+func load_character(dir: String, char_name: String, fallback_dir: String = "", fallback_name: String = "") -> bool:
 	var cfg := ConfigFile.new()
 	if cfg.load(dir.path_join("frames.cfg")) != OK:
 		push_error("CharacterSprite: missing frames.cfg in " + dir)
@@ -30,7 +32,7 @@ func load_character(dir: String, char_name: String) -> bool:
 	var ay: int = cfg.get_value("canvas", "anchor_y")
 	_px_per_m = cfg.get_value("canvas", "px_per_m")
 	for anim: String in ANIMS:
-		_textures[anim] = load(dir.path_join("%s_%s.png" % [char_name, anim]))
+		_textures[anim] = load(strip_path(dir, char_name, fallback_dir, fallback_name, anim))
 		_ranges[anim] = cfg.get_value(anim, "ranges")
 		_drivers[anim] = cfg.get_value(anim, "driver")
 		_loops[anim] = cfg.get_value(anim, "loop")
@@ -40,6 +42,14 @@ func load_character(dir: String, char_name: String) -> bool:
 	_sprite.region_rect = Rect2(0, 0, w, h)
 	add_child(_sprite)
 	return true
+
+
+## The strip to use for `anim`: the character's own if it exists, else the fallback's.
+static func strip_path(dir: String, char_name: String, fallback_dir: String, fallback_name: String, anim: String) -> String:
+	var own: String = dir.path_join("%s_%s.png" % [char_name, anim])
+	if ResourceLoader.exists(own) or fallback_dir.is_empty():
+		return own
+	return fallback_dir.path_join("%s_%s.png" % [fallback_name, anim])
 
 
 ## Places the sprite at the feet point (screen px) and picks the drawing for this tick.
