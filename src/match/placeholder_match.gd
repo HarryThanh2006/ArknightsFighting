@@ -15,6 +15,7 @@ const Combat = preload("res://src/sim/combat.gd")
 var _hud := Label.new()
 var _runner: MatchRunner
 var _boxes: Array[ColorRect] = []
+var _feedback := PlaceholderEventFeedback.new()
 
 
 func _ready() -> void:
@@ -41,6 +42,13 @@ func _ready() -> void:
 		add_child(box)
 		_boxes.append(box)
 	_runner.views.append(self)
+	# PLACEHOLDER event-driven feedback (flash, shake, SFX, banners).
+	_feedback.su_to_px = func(x_su: int, y_su: int) -> Vector2:
+		return Vector2(CENTRE_X_PX + float(x_su) / float(SimMath.SU_PER_METER) * PX_PER_M,
+			FLOOR_Y_PX - float(y_su) / float(SimMath.SU_PER_METER) * PX_PER_M)
+	_feedback.shake_target = self
+	add_child(_feedback)
+	_runner.views.append(_feedback)
 	_runner.start_match(MATCH_SEED, Time.get_ticks_usec())
 
 
@@ -86,6 +94,7 @@ func _unhandled_key_input(event: InputEvent) -> void:
 	var key := event as InputEventKey
 	if key != null and key.pressed and not key.echo and key.physical_keycode == KEY_R:
 		if _runner != null and _runner.view != null and _runner.view.ended():
+			_feedback.reset()
 			_runner.start_match(MATCH_SEED, Time.get_ticks_usec())
 
 ## Draw active strike boxes in the same facing-local coordinates as contact tests.
