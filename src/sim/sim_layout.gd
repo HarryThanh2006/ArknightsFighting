@@ -5,7 +5,7 @@ class_name SimLayout
 ## Sizes other than the two headers and the event ring are F3 estimates until each
 ## owning GDD fixes its fields. Snapshots are `buffer.duplicate()`: assignment aliases (ADR-0001 R7).
 
-const LAYOUT_VERSION: int = 6
+const LAYOUT_VERSION: int = 7
 ## Hard word limit (user decision 2026-11-09).
 const SIM_BUFFER_WORD_BUDGET: int = 2_048
 
@@ -74,8 +74,8 @@ const PROJ_STRIDE: int = 16
 const HIT_BASE: int = 272
 const HIT_CAP: int = 6
 const HIT_STRIDE: int = 8
-## Record word 1: contact x in su (midpoint of the first strike/hurt overlap), for HIT/BLOCK events.
-const HR_CONTACT_X: int = 1
+## Record word 1: contact point (midpoint of the first strike/hurt overlap) packed by SimEvents.pack_contact (half-su).
+const HR_CONTACT_POS: int = 1
 
 # --- Opponent AI (includes its own 2 PRNG words) ---
 const AI_BASE: int = 320

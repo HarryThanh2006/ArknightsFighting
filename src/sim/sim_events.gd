@@ -8,7 +8,7 @@ class_name SimEvents
 ## design/gdd/sim-core.md rule 18 and the emitting GDDs; only HIT, BLOCK, KO,
 ## ROUND_START, ROUND_END and MATCH_END are emitted today.
 const NONE: int = 0
-## a0 = attacker + 2 × move_id, a1 = damage applied, a2 = contact x (su). Defender = 1 − attacker.
+## a0 = attacker + 2 × move_id, a1 = damage applied, a2 = contact point (pack_contact). Defender = 1 − attacker.
 const HIT: int = 1
 ## As HIT; a1 = 0 (no chip damage).
 const BLOCK: int = 2
@@ -26,14 +26,40 @@ const MATCH_END: int = 9
 ## Projectile contacts are observation events (rule 18c); not emitted until Projectiles exist.
 const PROJECTILE_HIT: int = 10
 const PROJECTILE_BLOCK: int = 11
-const EVENT_TYPE_COUNT: int = 12
+## Observation: a move started (swing cue). a0 = player + 2 × move_id.
+const ATTACK_START: int = 12
+## Observation: once per attack, the tick after its active window ends with no HIT/BLOCK
+## (never when blocked or interrupted). a0 = player + 2 × move_id.
+const WHIFF: int = 13
+const EVENT_TYPE_COUNT: int = 14
 
 ## ROUND_END reasons.
 const REASON_KO: int = 0
 const REASON_TIMEOUT: int = 1
 
 ## Class per type (rule 18a): 1 critical, 0 observation. Indexed only after a range check.
-const EVENT_CLASS: Array[int] = [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0]
+const EVENT_CLASS: Array[int] = [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0]
+
+## Contact point packing for one payload word (rule 18 "+ ×" convention), in half-su so
+## the overlap centre needs no rounding: a2 = (x2 + CONTACT_X2_BIAS) + CONTACT_STRIDE × y2,
+## valid for |x2| < 2^21 (stage ±50,000 su + reach gives |x2| ≤ 140,000).
+const CONTACT_X2_BIAS: int = 1 << 21
+const CONTACT_STRIDE: int = 1 << 22
+
+
+## Packs a contact point given in half-su (x2 = 2x, y2 = 2y).
+static func pack_contact(x2: int, y2: int) -> int:
+	return (x2 + CONTACT_X2_BIAS) + CONTACT_STRIDE * y2
+
+
+## Contact x in half-su from a packed HIT/BLOCK a2.
+static func contact_x2(packed: int) -> int:
+	return posmod(packed, CONTACT_STRIDE) - CONTACT_X2_BIAS
+
+
+## Contact y in half-su from a packed HIT/BLOCK a2.
+static func contact_y2(packed: int) -> int:
+	return SimMath.div_floor(packed - posmod(packed, CONTACT_STRIDE), CONTACT_STRIDE)
 
 ## Index of each field in the array `read` returns.
 const R_CURSOR: int = 0

@@ -23,9 +23,13 @@ static func attack(b: PackedInt64Array, kit: SimMoveData) -> void:
 		var move: int = b[i + SimLayout.PF_ATK_ACTIVE]
 		if move != 0:
 			var duration: int = kit.move(move)["frames"]
-			if b[i + SimLayout.PF_ATK_FRAME] < duration:
-				b[i + SimLayout.PF_ATK_FRAME] += 1
+			var frame: int = b[i + SimLayout.PF_ATK_FRAME]
+			if frame < duration:
+				b[i + SimLayout.PF_ATK_FRAME] = frame + 1
+				if kit.boxes(move, frame + 1, "hitboxes").is_empty():
+					_whiff_check(b, p, kit, move, frame)
 				continue
+			_whiff_check(b, p, kit, move, frame)
 			cancel(b, i)
 		if b[i + SimLayout.PF_HITSTUN] > 0 or b[i + SimLayout.PF_BLOCKSTUN] > 0:
 			continue
@@ -36,6 +40,12 @@ static func attack(b: PackedInt64Array, kit: SimMoveData) -> void:
 		if buffered != 0 and not (word(b, p) & BLOCK):
 			b[i + SimLayout.PF_ATK_ACTIVE] = buffered
 			b[i + SimLayout.PF_ATK_FRAME] = 1
+			SimEvents.emit(b, SimEvents.ATTACK_START, p + 2 * buffered, 0, 0)
+
+## WHIFF once per attack: `last` was an active frame and the attack registered no contact.
+static func _whiff_check(b: PackedInt64Array, p: int, kit: SimMoveData, move: int, last: int) -> void:
+	if b[base(p) + SimLayout.PF_CONNECTED] == 0 and not kit.boxes(move, last, "hitboxes").is_empty():
+		SimEvents.emit(b, SimEvents.WHIFF, p + 2 * move, 0, 0)
 
 ## H2: age the buffered press, expire it after BUFFER_TICKS, store a fresh Light/Heavy edge
 ## (Heavy wins a same-tick press; the newest press replaces an older one).
@@ -86,8 +96,9 @@ static func _first_overlap(b: PackedInt64Array, p: int, kit: SimMoveData) -> Arr
 				return [strike, hurt]
 	return []
 
-## Contact x in su: midpoint of the x overlap of the first contacting box pair.
-static func contact_x(b: PackedInt64Array, p: int, kit: SimMoveData) -> int:
+## Contact point, packed (SimEvents.pack_contact): centre of the overlap rectangle of the first
+## contacting box pair, in half-su (lo + hi), so it mirrors exactly across P1/P2.
+static func contact_pos(b: PackedInt64Array, p: int, kit: SimMoveData) -> int:
 	var pair: Array = _first_overlap(b, p, kit)
 	var strike: Array = pair[0]
 	var hurt: Array = pair[1]
@@ -95,20 +106,28 @@ static func contact_x(b: PackedInt64Array, p: int, kit: SimMoveData) -> int:
 	var s_hw: int = strike[2]
 	var h_x: int = hurt[0]
 	var h_hw: int = hurt[2]
+	var s_y: int = strike[1]
+	var s_hh: int = strike[3]
+	var h_y: int = hurt[1]
+	var h_hh: int = hurt[3]
 	var i: int = base(p)
 	var d: int = base(1 - p)
 	var sx: int = b[i + SimLayout.PF_X] + b[i + SimLayout.PF_FACING] * s_x
 	var hx: int = b[d + SimLayout.PF_X] + b[d + SimLayout.PF_FACING] * h_x
 	var lo: int = maxi(sx - s_hw, hx - h_hw)
 	var hi: int = mini(sx + s_hw, hx + h_hw)
-	return SimMath.div_floor(lo + hi, 2)
+	var sy: int = b[i + SimLayout.PF_Y] + s_y
+	var hy: int = b[d + SimLayout.PF_Y] + h_y
+	var bottom: int = maxi(sy - s_hh, hy - h_hh)
+	var top: int = mini(sy + s_hh, hy + h_hh)
+	return SimEvents.pack_contact(lo + hi, bottom + top)
 
 static func resolve(b: PackedInt64Array, kit: SimMoveData) -> void:
 	var hit0: int = contact(b, 0, kit)
 	var hit1: int = contact(b, 1, kit)
 	# Contact points are gathered before any write, like the contacts themselves.
-	var x0: int = contact_x(b, 0, kit) if hit0 != 0 else 0
-	var x1: int = contact_x(b, 1, kit) if hit1 != 0 else 0
+	var x0: int = contact_pos(b, 0, kit) if hit0 != 0 else 0
+	var x1: int = contact_pos(b, 1, kit) if hit1 != 0 else 0
 	for p: int in SimLayout.P_COUNT:
 		var i: int = base(p)
 		if b[i + SimLayout.PF_HITSTOP] > 0:
@@ -117,7 +136,7 @@ static func resolve(b: PackedInt64Array, kit: SimMoveData) -> void:
 			b[i + SimLayout.PF_BLOCKSTUN] = maxi(0, b[i + SimLayout.PF_BLOCKSTUN] - 1)
 		var hit: int = hit0 if p == 0 else hit1
 		b[SimLayout.HIT_BASE + p * SimLayout.HIT_STRIDE] = hit
-		b[SimLayout.HIT_BASE + p * SimLayout.HIT_STRIDE + SimLayout.HR_CONTACT_X] = x0 if p == 0 else x1
+		b[SimLayout.HIT_BASE + p * SimLayout.HIT_STRIDE + SimLayout.HR_CONTACT_POS] = x0 if p == 0 else x1
 		if hit != 0:
 			b[i + SimLayout.PF_CONNECTED] = 1
 	apply_hit(b, 0, hit0, kit)
@@ -145,7 +164,7 @@ static func apply_hit(b: PackedInt64Array, attacker: int, hit: int, kit: SimMove
 	b[d + SimLayout.PF_HITSTOP] = maxi(b[d + SimLayout.PF_HITSTOP], stop)
 	# I5: one character contact event per attacker per tick (one record per attacker).
 	SimEvents.emit(b, SimEvents.HIT if hit > 0 else SimEvents.BLOCK, attacker + 2 * absi(hit), applied,
-			b[SimLayout.HIT_BASE + attacker * SimLayout.HIT_STRIDE + SimLayout.HR_CONTACT_X])
+			b[SimLayout.HIT_BASE + attacker * SimLayout.HIT_STRIDE + SimLayout.HR_CONTACT_POS])
 
 static func reset_player(b: PackedInt64Array, p: int, kit: SimMoveData) -> void:
 	var i: int = base(p)
@@ -157,7 +176,7 @@ static func reset_player(b: PackedInt64Array, p: int, kit: SimMoveData) -> void:
 	b[i + SimLayout.PF_BUF_MOVE] = 0
 	b[i + SimLayout.PF_BUF_AGE] = 0
 	b[SimLayout.HIT_BASE + p * SimLayout.HIT_STRIDE] = 0
-	b[SimLayout.HIT_BASE + p * SimLayout.HIT_STRIDE + SimLayout.HR_CONTACT_X] = 0
+	b[SimLayout.HIT_BASE + p * SimLayout.HIT_STRIDE + SimLayout.HR_CONTACT_POS] = 0
 
 static func _overlap(b: PackedInt64Array, a: int, strike: Array, d: int, hurt: Array) -> bool:
 	var ax: int = strike[0]
