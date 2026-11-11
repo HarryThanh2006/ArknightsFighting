@@ -1807,17 +1807,46 @@ pass.
 
 ### Events (rules 18–19, F4–F7, EC-5, EC-15, EC-18, EC-19, EC-22)
 
-*Implemented 2026-11-11 (`src/sim/sim_events.gd`, layout 6). Differences from
+*Implemented 2026-11-11 (`src/sim/sim_events.gd`, layout 6; layout 7 adds the
+packed contact point). Differences from
 this GDD: (1) the "debug assert" of 18d is a Debug-build `push_error`, so
 gdUnit4 can exercise the paths (AC-V5a open); (2) type IDs are 0 `NONE`,
 1 `HIT`, 2 `BLOCK`, 3 `THROW_CONNECT`, 4 `ULTIMATE_ACTIVATE`, 5 `ULTIMATE_HIT`,
 6 `KO`, 7 `ROUND_END`, 8 `ROUND_START`, 9 `MATCH_END`, 10 `PROJECTILE_HIT`,
-11 `PROJECTILE_BLOCK` (only 1, 2, 6–9 are emitted); (3) payloads: `HIT` /
-`BLOCK` a0 = attacker + 2 × move, a1 = damage applied, a2 = contact x (su;
-no contact y, three arguments only); `KO` a0 = player; `ROUND_END` a0 =
+11 `PROJECTILE_BLOCK`, 12 `ATTACK_START`, 13 `WHIFF` (10–11 not emitted yet);
+(3) payloads: `HIT` / `BLOCK` a0 = attacker + 2 × move, a1 = damage applied,
+a2 = packed contact point (below); `KO` a0 = player; `ROUND_END` a0 =
 result, a1 = reason (0 KO, 1 timeout), a2 = round; `ROUND_START` a0 = round;
 `MATCH_END` a0 = winner, a1/a2 = wins; (4) `ROUND_START` comes from the
 round-check slot (end of block B) on each round's first live tick.*
+
+*Decided 2026-11-11 (user): two observation events and the contact y.*
+- *`ATTACK_START` (observation): a0 = player + 2 × move. Emitted in the attack
+  slot on the tick the move takes frame 1, from a fresh press or from the input
+  buffer (Hit Detection H2). At most one per player per tick.*
+- *`WHIFF` (observation): a0 = player + 2 × move. Emitted once per attack
+  instance, in the attack slot, on the first tick after its active window ends
+  (the frame after its last frame with a hitbox; at the move's end if the last
+  frame is active) when that instance registered no `HIT` or `BLOCK`. A blocked
+  attack is not a whiff. An attack cancelled by being hit, before or during its
+  active frames, emits nothing. A player never emits `ATTACK_START` and `WHIFF`
+  on the same tick (a move cannot start while one is active).*
+- *Contact point (option a, packing; chosen over deriving y in presentation
+  because the overlap rectangle needs both boxes and positions at the contact
+  tick, which presentation no longer has after hurtboxes move, and packing keeps
+  the 6-word record and costs no layout words).* Defined as the centre of the
+  hitbox ∩ hurtbox overlap rectangle of the first contacting pair, kept in
+  **half-su** so it needs no rounding and mirrors exactly: `x2 = lo_x + hi_x`,
+  `y2 = lo_y + hi_y`, `a2 = (x2 + 2²¹) + 2²² × y2`. Bounds: |x2| ≤ 2 × (50,000 su
+  wall + 20,000 su reach) = 140,000 < 2²¹ = 2,097,152; any y2 < 2⁴⁰ keeps
+  |a2| < 2⁶², so the word never overflows (F11 unaffected). Decode:
+  `x2 = posmod(a2, 2²²) − 2²¹`, `y2 = div_floor(a2 − posmod(a2, 2²²), 2²²)`
+  (`SimEvents.contact_x2/contact_y2`).
+- *Per-tick bound re-checked:* observations remain capped by `OBS_CAP` = 7, so
+  rule 18c's critical guarantee (≤ 9 critical, true bound 8) is unchanged. The
+  new types add at most 2 observations per tick (one per player), so today's
+  worst tick is 8 critical + 2 observation = 10 ≤ 16, and no observation is
+  dropped until projectiles add more than 5 more in one tick.
 
 - **AC-E1** (U; F4, EC-1, EC-2) GIVEN a sim at tick ≥ 1, WHEN 13 ticks each
   accept 16 events (208 total), THEN a read from cursor 0 returns seq 0–207
