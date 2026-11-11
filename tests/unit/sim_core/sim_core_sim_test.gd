@@ -89,7 +89,8 @@ func test_frozen_step_runs_block_a_only_and_decrements_freeze() -> void:
 	s.step(RIGHT, LEFT)
 	assert_int(s.buffer[SimLayout.H_FREEZE_TICKS]).is_equal(2)
 	var allowed := PackedInt64Array([SimLayout.H_TICK, SimLayout.H_FREEZE_TICKS,
-		P0_BASE + SimLayout.PF_PREV_X, SimLayout.IN_BASE + 2, SimLayout.IN_BASE + 32 + 2])
+		P0_BASE + SimLayout.PF_PREV_X, SimLayout.IN_BASE + 2, SimLayout.IN_BASE + 32 + 2,
+		SimLayout.EC_OBS_THIS_TICK, SimLayout.EC_CRIT_THIS_TICK])  # block A resets the per-tick event counters (rule 7)
 	for i: int in _changed(before, s.buffer):
 		assert_bool(allowed.has(i)).override_failure_message("word %d changed on a frozen tick" % i).is_true()
 	assert_int(s.buffer[P0_BASE + SimLayout.PF_X]).is_equal(before[P0_BASE + SimLayout.PF_X])

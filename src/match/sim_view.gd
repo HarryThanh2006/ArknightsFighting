@@ -89,3 +89,10 @@ func facing(p: int) -> int:
 ## Immutable facing-local boxes for this exact simulation frame.
 func hitboxes(p: int) -> Array:
 	return _sim.data.boxes(move_id(p), move_frame(p), "hitboxes")
+
+## Rule 18f: copies by value into `out` the event records (6 ints each, see SimEvents)
+## with seq ≥ next_seq still in the ring. Returns [cursor, lost, count,
+## event_overflow_count, critical_overflow_count, sim_fault] (SimEvents.R_* indices).
+## Read between steps only; the caller keeps the cursor outside the sim.
+func events_since(next_seq: int, out: PackedInt64Array) -> PackedInt64Array:
+	return SimEvents.read(_sim.buffer, next_seq, out)

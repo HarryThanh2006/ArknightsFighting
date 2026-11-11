@@ -5,7 +5,7 @@ class_name SimLayout
 ## Sizes other than the two headers and the event ring are F3 estimates until each
 ## owning GDD fixes its fields. Snapshots are `buffer.duplicate()`: assignment aliases (ADR-0001 R7).
 
-const LAYOUT_VERSION: int = 5
+const LAYOUT_VERSION: int = 6
 ## Hard word limit (user decision 2026-11-09).
 const SIM_BUFFER_WORD_BUDGET: int = 2_048
 
@@ -74,6 +74,8 @@ const PROJ_STRIDE: int = 16
 const HIT_BASE: int = 272
 const HIT_CAP: int = 6
 const HIT_STRIDE: int = 8
+## Record word 1: contact x in su (midpoint of the first strike/hurt overlap), for HIT/BLOCK events.
+const HR_CONTACT_X: int = 1
 
 # --- Opponent AI (includes its own 2 PRNG words) ---
 const AI_BASE: int = 320
@@ -90,6 +92,9 @@ const R_WINS_1: int = 355
 const R_ROUND: int = 356
 const R_INTERVAL: int = 357
 const R_RESULT: int = 358
+## Per-player KO flags (sim-core I3): 0 -> 1 emits KO; reset at round start.
+const R_KO_0: int = 359
+const R_KO_1: int = 360
 
 # --- Arena ---
 const ARENA_BASE: int = 368

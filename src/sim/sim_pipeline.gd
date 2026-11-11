@@ -21,8 +21,7 @@ static func init_all(b: PackedInt64Array, kit: SimMoveData) -> void:
 ## Block A (rule 8): always runs on a live or frozen tick.
 static func block_a(b: PackedInt64Array, w0: int, w1: int) -> void:
 	b[SimLayout.H_TICK] += 1
-	b[SimLayout.EC_OBS_THIS_TICK] = 0
-	b[SimLayout.EC_CRIT_THIS_TICK] = 0
+	SimEvents.begin_tick(b)
 	for p: int in SimLayout.P_COUNT:
 		var base: int = SimLayout.P_BASE + p * SimLayout.P_STRIDE
 		b[base + SimLayout.PF_PREV_X] = b[base + SimLayout.PF_X]
