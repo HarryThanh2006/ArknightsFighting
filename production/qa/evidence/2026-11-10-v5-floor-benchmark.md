@@ -226,3 +226,25 @@ All five runs inside AC-V3 (worst p99.9 232 µs). Per-slot medians vs layout 6:
 attack 3.77 → 5.24 µs (WHIFF check reads the hitbox track each advancing
 tick, plus ATTACK_START), resolve 6.52 → 6.31, round_check 1.41 → 1.35,
 checksum 29.6 → 29.1. Mean per tick +0.7 µs.
+
+## Addendum 2026-11-11 — max distance (M15)
+
+Code: `3090b0c` + view-only commits, layout 7. Max distance changes the
+scripted fight: **431 hits, 25 blocks, 11,656 hit-stop ticks, 30 KOs, 11
+matches** (identical on all five runs). Release export, i7-13620H.
+
+| Build | Run | Mean | p50 | p99 | p99.9 | Max (not gating) | `MEMORY_STATIC` Δ |
+|---|---|---|---|---|---|---|---|
+| Release | 36 | 26.41 | 25 | 66 | 183 | 1,600 | 0 |
+| Release | 37 | 26.85 | 25 | 70 | **276** | 5,233 | 0 |
+| Release | 38 | 26.67 | 25 | 66 | 190 | 11,372 | 0 |
+| Release | 39 | 26.42 | 25 | 68 | 183 | 752 | 0 |
+| Release | 40 | 27.83 | 25 | 73 | **284** | 21,396 | 0 |
+| **Release median** | | **26.67** | **25** | **68** | **190** | 5,233 | 0 |
+
+**Reading:** the median is inside AC-V3, but **runs 37 and 40 exceed the
+250 µs p99.9 gate**. In both, the checksum slot's own p99.9 spiked (1,097 and
+773 µs vs ~200 in the other runs) and the max tick reached 5–21 ms, which
+points at OS / machine interference rather than the new rule; per-slot medians:
+movement 4.22 → 4.61 µs, reactions 2.84 → 3.38 µs (max-distance check runs in
+both slots). Not proven — a quieter machine or more runs would settle it.

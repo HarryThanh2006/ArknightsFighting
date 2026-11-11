@@ -86,3 +86,16 @@ Code: `7a292c3`. Fixture regenerated. Same machine and commands.
 | Release (export), run 2 | 0 / 10,000 | — | 1419703315605913082 | -8590935311795763469 |
 
 **AC-X5: PASS on layout 7 (one machine).**
+
+## Addendum 2026-11-11 — max distance (M15), layout 7
+
+Code: `3090b0c` (sim behaviour change, layout unchanged) + view-only commits.
+Fixture regenerated. Same machine and commands.
+
+| Build | Mismatching ticks | Final checksum | Digest of all checksums |
+|---|---|---|---|
+| Debug (editor 4.7.2) | 0 / 10,000 | -3522965011501976382 | -2405648565753264139 |
+| Release (export), run 1 | 0 / 10,000 | -3522965011501976382 | -2405648565753264139 |
+| Release (export), run 2 | 0 / 10,000 | -3522965011501976382 | -2405648565753264139 |
+
+**AC-X5: PASS (one machine).**
