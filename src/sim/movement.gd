@@ -13,6 +13,8 @@ const WALK_BACK_SU: int = 270
 const PUSH_HW_SU: int = 2_500
 ## Start positions (Round & Match setup later).
 const START_X_SU: int = 15_000
+## M15 / F6 maximum |dx| between the players, su (decided 6 m, 2026-11-10).
+const MAX_DIST_SU: int = 60_000
 
 ## Locomotion states (M5).
 const MSTATE_GROUND: int = 0
@@ -49,6 +51,8 @@ static func init(b: PackedInt64Array) -> void:
 
 ## Movement slot (M17 steps 2-4, Tier −1 subset).
 static func step(b: PackedInt64Array) -> void:
+	var x0: int = b[SimLayout.P_BASE + SimLayout.PF_X]
+	var x1: int = b[SimLayout.P_BASE + SimLayout.P_STRIDE + SimLayout.PF_X]
 	var slot: int = posmod(b[SimLayout.H_TICK], SimLayout.INPUT_RING_TICKS)
 	for p: int in SimLayout.P_COUNT:
 		var base: int = SimLayout.P_BASE + p * SimLayout.P_STRIDE
@@ -67,6 +71,7 @@ static func step(b: PackedInt64Array) -> void:
 				vx = facing * dir_local * speed  # M2: magnitude, sign last
 		b[base + SimLayout.PF_VX] = vx
 		b[base + SimLayout.PF_X] += vx
+	max_distance(b, x0, x1)
 	resolve(b)
 	update_facing(b)
 
@@ -152,6 +157,8 @@ static func derived(b: PackedInt64Array, p: int) -> int:
 
 ## M16/F7: hit knockback moves the defender, block recoil moves the attacker.
 static func reactions(b: PackedInt64Array, was_stopped: int, kit: SimMoveData) -> void:
+	var x0: int = b[SimLayout.P_BASE + SimLayout.PF_X]
+	var x1: int = b[SimLayout.P_BASE + SimLayout.P_STRIDE + SimLayout.PF_X]
 	for p: int in SimLayout.P_COUNT:
 		var i: int = SimLayout.P_BASE + p * SimLayout.P_STRIDE
 		var incoming: int = b[SimLayout.HIT_BASE + (1 - p) * SimLayout.HIT_STRIDE]
@@ -180,4 +187,30 @@ static func reactions(b: PackedInt64Array, was_stopped: int, kit: SimMoveData) -
 			b[SimLayout.P_BASE + (1 - p) * SimLayout.P_STRIDE + SimLayout.PF_X] -= x - clipped
 			x = clipped
 		b[i + SimLayout.PF_X] = x
+	max_distance(b, x0, x1)
 	resolve(b)
+
+
+## M15 / F6: if |dx| > MAX_DIST_SU, take the excess back only from movement away from
+## the opponent made since (x0, x1) (this slot's start), half from each (ceil), the rest
+## from whichever still moved away. Reads both before writing either (order-free).
+static func max_distance(b: PackedInt64Array, x0: int, x1: int) -> void:
+	var i0: int = SimLayout.P_BASE + SimLayout.PF_X
+	var i1: int = SimLayout.P_BASE + SimLayout.P_STRIDE + SimLayout.PF_X
+	var excess: int = absi(b[i1] - b[i0]) - MAX_DIST_SU
+	if excess <= 0:
+		return
+	# Away direction for P0 is toward lower x when P1 started to its right (sides never swap).
+	var side: int = 1 if x1 >= x0 else -1
+	var away0: int = maxi(0, -side * (b[i0] - x0))
+	var away1: int = maxi(0, side * (b[i1] - x1))
+	var half: int = SimMath.div_floor(excess + 1, 2)
+	var t0: int = mini(away0, half)
+	var t1: int = mini(away1, half)
+	var rest: int = excess - t0 - t1
+	if rest > 0:
+		t0 += mini(rest, away0 - t0)
+		rest = excess - t0 - t1
+		t1 += mini(rest, away1 - t1)
+	b[i0] += side * t0
+	b[i1] -= side * t1

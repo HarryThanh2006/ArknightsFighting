@@ -202,6 +202,14 @@ Movement slot. Excess is removed only from movement **away** from the opponent
 made this tick (walk back, jump back, knockback), equally from both players
 (F6). Walking toward is never blocked by it. The camera reads this limit and
 never owns it (systems-index TD note 3). **[Proposed]**
+*Implemented 2026-11-11 (`Movement.max_distance`, 60,000 su), pulled forward
+from Tier 0 for the fixed-width camera (user, 2026-11-11). It runs before
+bounds and separation in the movement slot and again in the reactions slot.
+**[Proposed — user to confirm]** In the reactions slot "movement made this
+tick" is measured from the positions at the start of that slot, so it covers
+hit knockback, block recoil and the corner-transferred recoil (Defense D1);
+clipping does not change `kb_speed`, which keeps decelerating as usual (a
+clipped push simply produces no motion while at the limit).*
 
 **M16. Knockback and pushback (reactions slot).** For each hit record of this
 tick (Hit Detection region) that targets character `p`, Movement sets
